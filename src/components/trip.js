@@ -61,7 +61,11 @@ const Trip = () => {
   };
 
   const handleChange = (e) => {
-    setTripData({ ...tripData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setTripData((prevData) => ({
+      ...prevData,
+      [name]: name === "start_date" || name === "end_date" ? new Date(value).toISOString().split("T")[0] : value,
+    }));
   };
 
   const handleAddTrip = async (e) => {
@@ -86,26 +90,42 @@ const Trip = () => {
     }
   };
 
+  const startEditTrip = (trip) => {
+    setTripData({
+      ...trip,
+      start_date: new Date(trip.start_date).toISOString().split("T")[0],
+      end_date: new Date(trip.end_date).toISOString().split("T")[0],
+    });
+    setCurrentTrip(trip.trip_id);
+    setMode("edit");
+  };
+
   const handleEditTrip = async (e) => {
     e.preventDefault();
+    console.log("正在更新行程:", tripData); // Debug
+  
     try {
       const response = await fetch(`http://localhost:5000/trip/${currentTrip}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(tripData),
       });
-
+  
+      const data = await response.json();
+      console.log("更新行程 API 回應:", data); // Debug
+  
       if (response.ok) {
         alert("行程更新成功");
-        setMode("list");
-        fetchTrips();
+        setMode("list"); // 回到列表
+        fetchTrips();    // 重新取得行程
       } else {
-        alert("更新失敗");
+        alert("更新失敗：" + (data.error || "未知錯誤"));
       }
     } catch (error) {
       console.error("行程更新錯誤:", error);
     }
   };
+  
 
   const loadTripDetails = async (tripId) => {
     try {
@@ -137,8 +157,8 @@ const Trip = () => {
                   <h3>{trip.title}</h3>
                   <p>{trip.description}</p>
                   <p>📍 {trip.area}</p>
-                  <p>📅 {trip.start_date} - {trip.end_date}</p>
-                  <button onClick={() => loadTripDetails(trip.trip_id)}>編輯</button>
+                  <p>📅 {trip.start_date.slice(0, 12)} - {trip.end_date.slice(0, 12)}</p>
+                  <button onClick={() => startEditTrip(trip)}>編輯</button>
                   <button onClick={() => handleDelete(trip.trip_id)}>刪除</button>
                 </li>
               ))}
