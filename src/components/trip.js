@@ -160,6 +160,7 @@ const Trip = () => {
                   <p>📅 {trip.start_date.slice(0, 12)} - {trip.end_date.slice(0, 12)}</p>
                   <button onClick={() => startEditTrip(trip)}>編輯</button>
                   <button onClick={() => handleDelete(trip.trip_id)}>刪除</button>
+                  <button>查看行程細節</button>
                 </li>
               ))}
             </ul>
