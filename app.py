@@ -183,22 +183,51 @@ def add_trip_detail():
     data = request.get_json()
     trip_id = data.get('trip_id')
     location = data.get('location')
+    date = data.get('date')
     start_time = data.get('start_time')
     end_time = data.get('end_time')
 
-    if not trip_id or not location or not start_time or not end_time:
+    if not trip_id or not location or not date or not start_time or not end_time:
         return jsonify({'error': '缺少必要欄位'}), 400
 
     try:
         cur = mysql.connection.cursor()
+        
+        # 先獲取行程的日期範圍
         cur.execute("""
-            INSERT INTO trip_detail (trip_id, location, start_time, end_time)
-            VALUES (%s, %s, %s, %s)
-        """, (trip_id, location, start_time, end_time))
+            SELECT start_date, end_date 
+            FROM trip 
+            WHERE trip_id = %s
+        """, (trip_id,))
+        trip_dates = cur.fetchone()
+        
+        if not trip_dates:
+            return jsonify({'error': '找不到對應的行程'}), 404
+            
+        trip_start_date = trip_dates[0]
+        trip_end_date = trip_dates[1]
+        detail_date = datetime.strptime(date, '%Y-%m-%d').date()
+        
+        # 檢查日期是否在範圍內
+        if detail_date < trip_start_date or detail_date > trip_end_date:
+            return jsonify({
+                'error': '行程細節的日期必須在行程的日期範圍內',
+                'valid_range': {
+                    'start_date': trip_start_date.strftime('%Y-%m-%d'),
+                    'end_date': trip_end_date.strftime('%Y-%m-%d')
+                }
+            }), 400
+
+        # 如果日期檢查通過，執行插入操作
+        cur.execute("""
+            INSERT INTO trip_detail (trip_id, location, date, start_time, end_time)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (trip_id, location, date, start_time, end_time))
         mysql.connection.commit()
         detail_id = cur.lastrowid
         cur.close()
         return jsonify({'message': '行程細節新增成功', 'detail_id': detail_id}), 201
+        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -207,7 +236,11 @@ def add_trip_detail():
 def get_trip_details(trip_id):
     try:
         cur = mysql.connection.cursor()
-        cur.execute("SELECT * FROM trip_detail WHERE trip_id = %s", (trip_id,))
+        cur.execute("""
+            SELECT * FROM trip_detail 
+            WHERE trip_id = %s 
+            ORDER BY date ASC, start_time ASC
+        """, (trip_id,))
         details = cur.fetchall()
 
         # ✅ 檢查 details 是否為 None
@@ -238,15 +271,16 @@ def get_trip_details(trip_id):
 def update_trip_detail(detail_id):
     data = request.get_json()
     location = data.get('location')
+    date = data.get('date')  # 新增日期欄位
     start_time = data.get('start_time')
     end_time = data.get('end_time')
 
     try:
         cur = mysql.connection.cursor()
         cur.execute("""
-            UPDATE trip_detail SET location=%s, start_time=%s, end_time=%s
+            UPDATE trip_detail SET location=%s, date=%s, start_time=%s, end_time=%s
             WHERE detail_id=%s
-        """, (location, start_time, end_time, detail_id))
+        """, (location, date, start_time, end_time, detail_id))
         mysql.connection.commit()
         cur.close()
         return jsonify({'message': '行程細節更新成功'}), 200
