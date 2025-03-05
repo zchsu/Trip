@@ -173,6 +173,40 @@ def delete_trip(trip_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
+@app.route('/trip/accepted/<int:user_id>', methods=['GET'])
+def get_accepted_trips(user_id):
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            SELECT t.*, u.username as creator_name 
+            FROM trip t
+            JOIN trip_participants tp ON t.trip_id = tp.trip_id
+            JOIN users u ON t.user_id = u.user_id
+            WHERE tp.user_id = %s AND tp.status = 'accepted'
+            AND t.user_id != %s
+        """, (user_id, user_id))
+        
+        columns = [desc[0] for desc in cur.description]
+        trips = cur.fetchall()
+        
+        result = []
+        for trip in trips:
+            trip_dict = dict(zip(columns, trip))
+            # 修改日期格式化方式
+            start_date = trip_dict['start_date']
+            end_date = trip_dict['end_date']
+            
+            # 轉換為與原本行程列表相同的格式
+            trip_dict['start_date'] = start_date.strftime('%a, %d %b')
+            trip_dict['end_date'] = end_date.strftime('%a, %d %b')
+            
+            result.append(trip_dict)
+            
+        cur.close()
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
 # -------------------------------
 # 行程細節 (trip_detail) API
 # -------------------------------

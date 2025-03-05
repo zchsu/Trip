@@ -50,17 +50,26 @@ const Trip = () => {
   
   const fetchTrips = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/trip/${userId}`);
-      let data = await response.json();
+      // 獲取用戶創建的行程
+      const createdResponse = await fetch(`http://localhost:5000/trip/${userId}`);
+      let createdTrips = await createdResponse.json();
       
-      console.log("取得行程:", data);
-  
-      if (Array.isArray(data) && Array.isArray(data[0])) {
-        data = data[0]; // 解包內層陣列
+      if (Array.isArray(createdTrips) && Array.isArray(createdTrips[0])) {
+        createdTrips = createdTrips[0];
       }
   
-      setTrips(data);
-      console.log("trips:", data);
+      // 獲取用戶接受邀請的行程
+      const acceptedResponse = await fetch(`http://localhost:5000/trip/accepted/${userId}`);
+      const acceptedTrips = await acceptedResponse.json();
+  
+      // 合併兩種行程並設置標記
+      const allTrips = [
+        ...createdTrips.map(trip => ({ ...trip, isCreator: true })),
+        ...acceptedTrips.map(trip => ({ ...trip, isCreator: false }))
+      ];
+  
+      setTrips(allTrips);
+      console.log("所有行程:", allTrips);
     } catch (error) {
       console.error("無法取得行程:", error);
       setTrips([]);
@@ -220,6 +229,15 @@ const Trip = () => {
     }
   };
   
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      day: '2-digit',
+      month: 'short'
+    });
+  };
+
   const formatTime = (time) => {
     if (!time) return '';
     const [hours, minutes] = time.split(':');
@@ -446,12 +464,17 @@ const handleInvitation = async (tripId, status) => {
                     <h3>{trip.title}</h3>
                     <p>{trip.description}</p>
                     <p>📍 {trip.area}</p>
-                    <p>📅 {trip.start_date.slice(0, 12)} - {trip.end_date.slice(0, 12)}</p>
-
+                    <p>📅 {formatDate(trip.start_date)} - {formatDate(trip.end_date)}</p>
+                    {!trip.isCreator && <p>👤 創建者: {trip.creator_name}</p>}
                     
 
-                    <button onClick={() => startEditTrip(trip)}>編輯</button>
-                    <button onClick={() => handleDelete(trip.trip_id)}>刪除</button>
+                    {/* 只有創建者可以編輯和刪除 */}
+                    {trip.isCreator ? (
+                      <>
+                        <button onClick={() => startEditTrip(trip)}>編輯</button>
+                        <button onClick={() => handleDelete(trip.trip_id)}>刪除</button>
+                      </>
+                    ) : null}
                     <button onClick={() => fetchTripDetails(trip.trip_id)}>查看行程細節</button>
                     
                     {showDetails && selectedTripId === trip.trip_id && (
@@ -465,13 +488,19 @@ const handleInvitation = async (tripId, status) => {
                             {participants.map(participant => (
                               <li key={participant.user_id}>
                                 {participant.username}
-                                <span className="status">({participant.status})</span>
+                                <span className={`participant-status status-${participant.status}`}>
+                                  {participant.status === 'accepted' ? '已接受' :
+                                  participant.status === 'invited' ? '待確認' : '已拒絕'}
+                                </span>
                               </li>
                             ))}
                           </ul>
                         </div>
 
-                        <button onClick={() => setDetailMode("add")}>新增細節</button>
+                        {/* 只有創建者可以新增和編輯行程細節 */}
+                          {trip.isCreator && (
+                            <button onClick={() => setDetailMode("add")}>新增細節</button>
+                          )}
                         
                         {detailMode === "add" && (
                           <form onSubmit={handleAddDetail}>
