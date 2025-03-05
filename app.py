@@ -299,6 +299,236 @@ def delete_trip_detail(detail_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# 新增好友請求
+@app.route('/friendship', methods=['POST'])
+def add_friend():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    friend_id = data.get('friend_id')
+
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            INSERT INTO friendships (user_id, friend_id)
+            VALUES (%s, %s)
+        """, (user_id, friend_id))
+        mysql.connection.commit()
+        cur.close()
+        return jsonify({'message': '好友請求已送出'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# 取得好友列表
+@app.route('/friends/<int:user_id>', methods=['GET'])
+def get_friends(user_id):
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            SELECT u.user_id, u.username
+            FROM users u
+            INNER JOIN friendships f ON (u.user_id = f.friend_id OR u.user_id = f.user_id)
+            WHERE (f.user_id = %s OR f.friend_id = %s)
+            AND f.status = 'accepted'
+            AND u.user_id != %s
+        """, (user_id, user_id, user_id))
+        friends = cur.fetchall()
+        cur.close()
+
+        friends_list = [{'user_id': f[0], 'username': f[1]} for f in friends]
+        return jsonify(friends_list), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# 邀請好友參加行程
+@app.route('/trip/invite', methods=['POST'])
+def invite_to_trip():
+    data = request.get_json()
+    trip_id = data.get('trip_id')
+    friend_id = data.get('friend_id')
+
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            INSERT INTO trip_participants (trip_id, user_id)
+            VALUES (%s, %s)
+        """, (trip_id, friend_id))
+        mysql.connection.commit()
+        cur.close()
+        return jsonify({'message': '已邀請好友參加行程'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+# 更新好友請求狀態
+@app.route('/friendship/<int:friendship_id>', methods=['PUT'])
+def update_friendship_status(friendship_id):
+    data = request.get_json()
+    status = data.get('status')  # 'accepted' 或 'rejected'
+
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            UPDATE friendships SET status = %s
+            WHERE friendship_id = %s
+        """, (status, friendship_id))
+        mysql.connection.commit()
+        cur.close()
+        return jsonify({'message': f'好友請求已{status}'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# 取得待處理的好友請求
+@app.route('/friendship/pending/<int:user_id>', methods=['GET'])
+def get_pending_friendships(user_id):
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            SELECT f.friendship_id, u.user_id, u.username, f.status
+            FROM friendships f
+            JOIN users u ON f.user_id = u.user_id
+            WHERE f.friend_id = %s AND f.status = 'pending'
+        """, (user_id,))
+        requests = cur.fetchall()
+        cur.close()
+
+        requests_list = [{
+            'friendship_id': r[0],
+            'user_id': r[1],
+            'username': r[2],
+            'status': r[3]
+        } for r in requests]
+        return jsonify(requests_list), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+    
+# 搜尋用戶
+@app.route('/users/search', methods=['GET'])
+def search_users():
+    username = request.args.get('username')
+    if not username:
+        return jsonify({'error': '請提供用戶名稱'}), 400
+
+    try:
+        cur = mysql.connection.cursor()
+        # 使用 LIKE 進行模糊搜尋
+        cur.execute("""
+            SELECT user_id, username 
+            FROM users 
+            WHERE username LIKE %s
+        """, (f'%{username}%',))
+        users = cur.fetchall()
+        cur.close()
+
+        users_list = [{'user_id': user[0], 'username': user[1]} for user in users]
+        return jsonify(users_list), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+# 取得行程的參與者列表
+@app.route('/trip/participants/<int:trip_id>', methods=['GET'])
+def get_trip_participants(trip_id):
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            SELECT u.user_id, u.username, tp.status
+            FROM trip_participants tp
+            JOIN users u ON tp.user_id = u.user_id
+            WHERE tp.trip_id = %s
+        """, (trip_id,))
+        participants = cur.fetchall()
+        cur.close()
+
+        participants_list = [{
+            'user_id': p[0],
+            'username': p[1],
+            'status': p[2]
+        } for p in participants]
+        return jsonify(participants_list), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# 更新行程參與者
+@app.route('/trip/participants/<int:trip_id>', methods=['PUT'])
+def update_trip_participants(trip_id):
+    data = request.get_json()
+    participant_ids = data.get('participant_ids', [])
+
+    try:
+        cur = mysql.connection.cursor()
+        
+        # 獲取現有參與者的狀態
+        cur.execute("""
+            SELECT user_id, status
+            FROM trip_participants
+            WHERE trip_id = %s
+        """, (trip_id,))
+        existing_participants = {row[0]: row[1] for row in cur.fetchall()}
+        
+        # 刪除原有的參與者
+        cur.execute("DELETE FROM trip_participants WHERE trip_id = %s", (trip_id,))
+        
+        # 新增參與者，保留原有狀態
+        for participant_id in participant_ids:
+            status = existing_participants.get(participant_id, 'invited')
+            cur.execute("""
+                INSERT INTO trip_participants (trip_id, user_id, status)
+                VALUES (%s, %s, %s)
+            """, (trip_id, participant_id, status))
+            
+        mysql.connection.commit()
+        cur.close()
+        return jsonify({'message': '參與者更新成功'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+# 取得使用者待處理的行程邀請
+@app.route('/trip/invitations/<int:user_id>', methods=['GET'])
+def get_pending_invitations(user_id):
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            SELECT tp.trip_id, t.title, t.area, t.start_date, t.end_date, 
+                   u.username as inviter_name, tp.status
+            FROM trip_participants tp
+            JOIN trip t ON tp.trip_id = t.trip_id
+            JOIN users u ON t.user_id = u.user_id
+            WHERE tp.user_id = %s AND tp.status = 'invited'
+        """, (user_id,))
+        invitations = cur.fetchall()
+        cur.close()
+
+        invitations_list = [{
+            'trip_id': inv[0],
+            'title': inv[1],
+            'area': inv[2],
+            'start_date': inv[3].strftime('%Y-%m-%d'),
+            'end_date': inv[4].strftime('%Y-%m-%d'),
+            'inviter_name': inv[5],
+            'status': inv[6]
+        } for inv in invitations]
+        return jsonify(invitations_list), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# 處理行程邀請
+@app.route('/trip/invitation/<int:trip_id>/<int:user_id>', methods=['PUT'])
+def handle_invitation(trip_id, user_id):
+    data = request.get_json()
+    status = data.get('status')  # 'accepted' 或 'rejected'
+
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            UPDATE trip_participants 
+            SET status = %s
+            WHERE trip_id = %s AND user_id = %s
+        """, (status, trip_id, user_id))
+        mysql.connection.commit()
+        cur.close()
+        return jsonify({'message': f'行程邀請已{status}'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

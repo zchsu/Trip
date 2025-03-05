@@ -30,12 +30,22 @@ const Trip = () => {
     end_time: "",
   });
 
+  const [friends, setFriends] = useState([]);
+  const [selectedFriends, setSelectedFriends] = useState([]);
+  const [pendingFriends, setPendingFriends] = useState([]);
+  const [participants, setParticipants] = useState([]);
+  const [editParticipants, setEditParticipants] = useState([]);
+  const [pendingInvitations, setPendingInvitations] = useState([]);
+
   useEffect(() => {
     if (!userId) {
       navigate("/login");
       return;
     }
     fetchTrips();
+    fetchFriends();
+    fetchPendingFriends();
+    fetchPendingInvitations();
   }, []);
   
   const fetchTrips = async () => {
@@ -147,39 +157,66 @@ const Trip = () => {
     }
   };
 
-  const startEditTrip = (trip) => {
+  const startEditTrip = async (trip) => {
     setTripData({
       ...trip,
       start_date: new Date(trip.start_date).toISOString().split("T")[0],
       end_date: new Date(trip.end_date).toISOString().split("T")[0],
     });
     setCurrentTrip(trip.trip_id);
+    
+    // 獲取當前參與者
+    try {
+      const response = await fetch(`http://localhost:5000/trip/participants/${trip.trip_id}`);
+      const data = await response.json();
+      setEditParticipants(data.map(p => p.user_id));
+    } catch (error) {
+      console.error("無法取得參與者列表:", error);
+    }
+    
     setMode("edit");
   };
 
   const handleEditTrip = async (e) => {
     e.preventDefault();
-    console.log("正在更新行程:", tripData); // Debug
+    console.log("正在更新行程:", tripData);
   
     try {
+      // 更新行程基本資訊
       const response = await fetch(`http://localhost:5000/trip/${currentTrip}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(tripData),
       });
   
-      const data = await response.json();
-      console.log("更新行程 API 回應:", data); // Debug
-  
-      if (response.ok) {
-        alert("行程更新成功");
-        setMode("list"); // 回到列表
-        fetchTrips();    // 重新取得行程
-      } else {
-        alert("更新失敗：" + (data.error || "未知錯誤"));
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "更新失敗");
       }
+  
+      // 更新參與者，排除已經拒絕的參與者
+      const currentParticipants = participants.filter(p => p.status !== 'rejected');
+      const participantsToUpdate = editParticipants.filter(id => 
+        currentParticipants.some(p => p.user_id === id) || 
+        !currentParticipants.some(p => p.user_id === id)
+      );
+  
+      const participantsResponse = await fetch(`http://localhost:5000/trip/participants/${currentTrip}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ participant_ids: participantsToUpdate }),
+      });
+  
+      if (!participantsResponse.ok) {
+        throw new Error("更新參與者失敗");
+      }
+  
+      alert("行程更新成功");
+      setMode("list");
+      fetchTrips();
     } catch (error) {
       console.error("行程更新錯誤:", error);
+      alert("更新失敗：" + error.message);
     }
   };
   
@@ -196,6 +233,7 @@ const Trip = () => {
       setTripDetails(data);
       setSelectedTripId(tripId);
       setShowDetails(true);
+      fetchParticipants(tripId);
     } catch (error) {
       console.error("無法取得行程細節:", error);
       setTripDetails([]);
@@ -236,12 +274,167 @@ const Trip = () => {
       console.error("行程細節更新錯誤:", error);
     }
   };
+
+  // 新增取得好友列表的函數
+  const fetchFriends = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/friends/${userId}`);
+      const data = await response.json();
+      setFriends(data);
+    } catch (error) {
+      console.error("無法取得好友列表:", error);
+    }
+  };
+
+  // 新增邀請好友的函數
+  const inviteFriend = async (friendId) => {
+    try {
+      const response = await fetch("http://localhost:5000/trip/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          trip_id: currentTrip,
+          friend_id: friendId
+        }),
+      });
+
+      if (response.ok) {
+        alert("已邀請好友參加行程");
+      } else {
+        const data = await response.json();
+        alert("邀請失敗：" + data.error);
+      }
+    } catch (error) {
+      console.error("邀請好友失敗:", error);
+    }
+  };
+
+  // 新增獲取待處理好友請求的函數
+const fetchPendingFriends = async () => {
+  try {
+    const response = await fetch(`http://localhost:5000/friendship/pending/${userId}`);
+    const data = await response.json();
+    setPendingFriends(data);
+  } catch (error) {
+    console.error("無法取得待處理的好友請求:", error);
+  }
+};
+
+// 新增處理好友請求的函數
+const handleFriendRequest = async (friendshipId, status) => {
+  try {
+    const response = await fetch(`http://localhost:5000/friendship/${friendshipId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+
+    if (response.ok) {
+      alert(status === 'accepted' ? '已接受好友請求' : '已拒絕好友請求');
+      fetchPendingFriends();
+      fetchFriends();
+    }
+  } catch (error) {
+    console.error("處理好友請求失敗:", error);
+  }
+};
+
+// 新增獲取行程參與者的函數
+const fetchParticipants = async (tripId) => {
+  try {
+    const response = await fetch(`http://localhost:5000/trip/participants/${tripId}`);
+    const data = await response.json();
+    setParticipants(data);
+  } catch (error) {
+    console.error("無法取得行程參與者:", error);
+  }
+};
+
+// 新增獲取待處理行程邀請的函數
+const fetchPendingInvitations = async () => {
+  try {
+    const response = await fetch(`http://localhost:5000/trip/invitations/${userId}`);
+    const data = await response.json();
+    setPendingInvitations(data);
+  } catch (error) {
+    console.error("無法取得待處理的行程邀請:", error);
+  }
+};
+
+// 新增處理行程邀請的函數
+const handleInvitation = async (tripId, status) => {
+  try {
+    const response = await fetch(`http://localhost:5000/trip/invitation/${tripId}/${userId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+
+    if (response.ok) {
+      alert(status === 'accepted' ? '已接受行程邀請' : '已拒絕行程邀請');
+      fetchPendingInvitations();
+    }
+  } catch (error) {
+    console.error("處理行程邀請失敗:", error);
+  }
+};
   
   return (
     <div>
       {mode === "list" && (
           <>
             <h1>行程管理</h1>
+            {/* 行程邀請區塊 */}
+              {pendingInvitations.length > 0 && (
+                <div className="trip-invitations">
+                  <h3>待處理的行程邀請</h3>
+                  <ul>
+                    {pendingInvitations.map(invitation => (
+                      <li key={invitation.trip_id} className="invitation-item">
+                        <div className="invitation-info">
+                          <h4>{invitation.title}</h4>
+                          <p>📍 {invitation.area}</p>
+                          <p>📅 {invitation.start_date} - {invitation.end_date}</p>
+                          <p>邀請人: {invitation.inviter_name}</p>
+                        </div>
+                        <div className="invitation-actions">
+                          <button 
+                            onClick={() => handleInvitation(invitation.trip_id, 'accepted')}
+                            className="accept-btn"
+                          >
+                            接受邀請
+                          </button>
+                          <button 
+                            onClick={() => handleInvitation(invitation.trip_id, 'rejected')}
+                            className="reject-btn"
+                          >
+                            拒絕邀請
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            {/* 好友請求區塊 */}
+            {pendingFriends.length > 0 && (
+              <div className="friend-requests">
+                <h3>待處理的好友請求</h3>
+                <ul>
+                  {pendingFriends.map(request => (
+                    <li key={request.friendship_id}>
+                      <span>{request.username}</span>
+                      <button onClick={() => handleFriendRequest(request.friendship_id, 'accepted')}>
+                        接受
+                      </button>
+                      <button onClick={() => handleFriendRequest(request.friendship_id, 'rejected')}>
+                        拒絕
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <button onClick={() => setMode("add")}>新增行程</button>
             <button onClick={() => navigate("/")}>返回首頁</button>
             {trips.length === 0 ? (
@@ -254,6 +447,9 @@ const Trip = () => {
                     <p>{trip.description}</p>
                     <p>📍 {trip.area}</p>
                     <p>📅 {trip.start_date.slice(0, 12)} - {trip.end_date.slice(0, 12)}</p>
+
+                    
+
                     <button onClick={() => startEditTrip(trip)}>編輯</button>
                     <button onClick={() => handleDelete(trip.trip_id)}>刪除</button>
                     <button onClick={() => fetchTripDetails(trip.trip_id)}>查看行程細節</button>
@@ -261,6 +457,20 @@ const Trip = () => {
                     {showDetails && selectedTripId === trip.trip_id && (
                       <div className="trip-details">
                         <h4>行程細節</h4>
+
+                        {/* 參與者列表 */}
+                        <div className="participants">
+                          <h5>參與者</h5>
+                          <ul>
+                            {participants.map(participant => (
+                              <li key={participant.user_id}>
+                                {participant.username}
+                                <span className="status">({participant.status})</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
                         <button onClick={() => setDetailMode("add")}>新增細節</button>
                         
                         {detailMode === "add" && (
@@ -377,28 +587,112 @@ const Trip = () => {
             <input name="area" placeholder="地點" onChange={handleChange} required />
             <input name="tags" placeholder="標籤 (逗號分隔)" onChange={handleChange} />
             <input name="budget" placeholder="預算" type="number" onChange={handleChange} />
+            <div>
+        <h3>選擇同行好友</h3>
+        {friends.map(friend => (
+          <div key={friend.user_id}>
+            <input
+              type="checkbox"
+              id={`friend-${friend.user_id}`}
+              value={friend.user_id}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  setSelectedFriends([...selectedFriends, friend.user_id]);
+                } else {
+                  setSelectedFriends(selectedFriends.filter(id => id !== friend.user_id));
+                }
+              }}
+            />
+            <label htmlFor={`friend-${friend.user_id}`}>{friend.username}</label>
+          </div>
+        ))}
+      </div>
             <button type="submit">提交</button>
           </form>
           <button onClick={() => setMode("list")}>返回</button>
         </>
       )}
 
-      {mode === "edit" && (
-        <>
-          <h1>編輯行程</h1>
-          <form onSubmit={handleEditTrip}>
-            <input name="title" value={tripData.title} onChange={handleChange} required />
-            <textarea name="description" value={tripData.description} onChange={handleChange} />
-            <input type="date" name="start_date" value={tripData.start_date} onChange={handleChange} required />
-            <input type="date" name="end_date" value={tripData.end_date} onChange={handleChange} required />
-            <input name="area" value={tripData.area} onChange={handleChange} required />
-            <input name="tags" value={tripData.tags} onChange={handleChange} />
-            <input name="budget" value={tripData.budget} type="number" onChange={handleChange} />
-            <button type="submit">更新</button>
-          </form>
-          <button onClick={() => setMode("list")}>返回</button>
-        </>
-      )}
+{mode === "edit" && (
+  <>
+    <h1>編輯行程</h1>
+    <form onSubmit={handleEditTrip}>
+      <input 
+        name="title" 
+        placeholder="行程標題" 
+        value={tripData.title}
+        onChange={handleChange} 
+        required 
+      />
+      <textarea 
+        name="description" 
+        placeholder="行程描述" 
+        value={tripData.description}
+        onChange={handleChange} 
+      />
+      <input 
+        type="date" 
+        name="start_date" 
+        value={tripData.start_date}
+        onChange={handleChange} 
+        required 
+      />
+      <input 
+        type="date" 
+        name="end_date" 
+        value={tripData.end_date}
+        onChange={handleChange} 
+        required 
+      />
+      <input 
+        name="area" 
+        placeholder="地點" 
+        value={tripData.area}
+        onChange={handleChange} 
+        required 
+      />
+      <input 
+        name="tags" 
+        placeholder="標籤 (逗號分隔)" 
+        value={tripData.tags}
+        onChange={handleChange} 
+      />
+      <input 
+        name="budget" 
+        placeholder="預算" 
+        type="number" 
+        value={tripData.budget}
+        onChange={handleChange} 
+      />
+      
+      <div className="participant-section">
+        <h3>修改同行好友</h3>
+        {friends.map(friend => (
+          <div key={friend.user_id} className="friend-checkbox">
+            <input
+              type="checkbox"
+              id={`edit-friend-${friend.user_id}`}
+              checked={editParticipants.includes(friend.user_id)}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  setEditParticipants([...editParticipants, friend.user_id]);
+                } else {
+                  setEditParticipants(editParticipants.filter(id => id !== friend.user_id));
+                }
+              }}
+            />
+            <label htmlFor={`edit-friend-${friend.user_id}`}>{friend.username}</label>
+          </div>
+        ))}
+      </div>
+      
+      <div className="button-group">
+        <button type="submit">更新</button>
+        <button type="button" onClick={() => setMode("list")}>返回</button>
+      </div>
+    </form>
+  </>
+)}
     </div>
   );
 };
