@@ -10,6 +10,19 @@ const Match = () => {
     const userId = localStorage.getItem("user_id");
     const [showTripDetails, setShowTripDetails] = useState(null);
     const [tripDetails, setTripDetails] = useState([]);
+    const [allTrips, setAllTrips] = useState([]); 
+
+    // 新增獲取所有行程的函數
+    const fetchAllTrips = async () => {
+        try {
+          const response = await fetch('http://localhost:5000/trip/all');
+          const data = await response.json();
+          setAllTrips(data);
+          setMatchedTrips(data); // 初始顯示所有行程
+        } catch (error) {
+          console.error("獲取所有行程失敗:", error);
+        }
+      };
 
     // 新增篩選條件的 state
     const [filters, setFilters] = useState({
@@ -29,6 +42,7 @@ const Match = () => {
         return;
       }
       fetchUserTrips();
+      fetchAllTrips();
     }, []);
   
     // 獲取用戶的所有行程
@@ -160,10 +174,62 @@ const Match = () => {
     }));
   };
   
-  // 新增搜尋函數
+  // 新增篩選所有行程的函數
+    const filterAllTrips = () => {
+    const filteredData = allTrips.filter(trip => {
+      // 基本篩選邏輯保持不變
+      const matchesKeyword = !filters.keyword || 
+        trip.title.toLowerCase().includes(filters.keyword.toLowerCase()) ||
+        trip.description.toLowerCase().includes(filters.keyword.toLowerCase());
+  
+      const matchesArea = !filters.area || trip.area === filters.area;
+  
+      const matchesTags = !filters.tags || 
+        filters.tags.toLowerCase().split(',').some(tag => 
+          trip.tags.toLowerCase().includes(tag.trim())
+        );
+  
+      const matchesGender = filters.gender === 'any' || 
+        trip.preferred_gender === filters.gender;
+  
+      const matchesBudget = trip.budget >= filters.budgetMin && 
+        trip.budget <= filters.budgetMax;
+  
+      // 新增日期重疊判斷
+      let matchesDates = true;
+      if (filters.dateStart && filters.dateEnd) {
+        const filterStart = new Date(filters.dateStart);
+        const filterEnd = new Date(filters.dateEnd);
+        const tripStart = new Date(trip.start_date);
+        const tripEnd = new Date(trip.end_date);
+  
+        // 計算重疊天數
+        const overlapStart = new Date(Math.max(filterStart, tripStart));
+        const overlapEnd = new Date(Math.min(filterEnd, tripEnd));
+        matchesDates = overlapStart <= overlapEnd;
+  
+        // 如果有重疊，計算重疊天數
+        if (matchesDates) {
+          const overlappingDays = Math.floor((overlapEnd - overlapStart) / (1000 * 60 * 60 * 24)) + 1;
+          trip.overlapping_days = overlappingDays;
+        }
+      }
+  
+      return matchesKeyword && matchesArea && matchesGender && 
+             matchesBudget && matchesTags && matchesDates;
+    });
+  
+    setMatchedTrips(filteredData);
+  };
+
+  // 修改搜尋函數
   const handleSearch = () => {
     if (selectedTrip) {
+      // 如果選擇了自己的行程，使用匹配邏輯
       findMatches(selectedTrip.trip_id);
+    } else {
+      // 如果沒有選擇行程，直接篩選所有行程
+      filterAllTrips();
     }
   };
 
@@ -179,9 +245,11 @@ const Match = () => {
       budgetMin: 0,
       budgetMax: 100000
     });
-    // 重設後重新搜尋
+    
     if (selectedTrip) {
       findMatches(selectedTrip.trip_id);
+    } else {
+      setMatchedTrips(allTrips); // 重設時顯示所有行程
     }
   };
 
@@ -351,6 +419,23 @@ const Match = () => {
                     placeholder="最高預算"
                     />
                 </div>
+                <div className="filter-item date-filter">
+                    <input
+                    type="date"
+                    name="dateStart"
+                    value={filters.dateStart}
+                    onChange={handleFilterChange}
+                    placeholder="開始日期"
+                    />
+                    <span>-</span>
+                    <input
+                    type="date"
+                    name="dateEnd"
+                    value={filters.dateEnd}
+                    onChange={handleFilterChange}
+                    placeholder="結束日期"
+                    />
+                </div>
 
                 <div className="filter-buttons">
                     <button onClick={handleSearch} className="search-button">
@@ -366,16 +451,14 @@ const Match = () => {
         )}
       </div>
   
-      {selectedTrip && (
-        <div className="matched-trips">
-          <h2>匹配結果</h2>
+      <div className="matched-trips">
+          <h2>{selectedTrip ? '匹配結果' : '所有行程'}</h2>
           {matchedTrips.length === 0 ? (
             <p>沒有找到符合的行程</p>
           ) : (
             renderMatchedTrips()
           )}
         </div>
-      )}
   
       <div className="navigation-buttons">
         <button onClick={() => navigate("/")}>返回首頁</button>

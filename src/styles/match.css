@@ -51,6 +51,39 @@
   .filter-form button:hover {
     background-color: #2980b9;
   }
+
+  .date-filter {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .date-filter input[type="date"] {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9em;
+    width: 130px;
+  }
+  
+  .date-filter span {
+    color: #666;
+  }
+
+  @media (max-width: 768px) {
+    .date-filter {
+      flex-direction: column;
+      gap: 10px;
+    }
+  
+    .date-filter input[type="date"] {
+      width: 100%;
+    }
+  
+    .date-filter span {
+      display: none;
+    }
+  }
   
   .matched-trips {
     margin-top: 20px;

@@ -633,6 +633,33 @@ def match_trips(trip_id):
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+@app.route('/trip/all', methods=['GET'])
+def get_all_trips():
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            SELECT t.*, u.username as creator_name
+            FROM trip t
+            JOIN users u ON t.user_id = u.user_id
+            ORDER BY t.start_date ASC
+        """)
+        
+        columns = [desc[0] for desc in cur.description]
+        trips = cur.fetchall()
+        
+        result = []
+        for trip in trips:
+            trip_dict = dict(zip(columns, trip))
+            trip_dict['start_date'] = trip_dict['start_date'].strftime('%Y-%m-%d')
+            trip_dict['end_date'] = trip_dict['end_date'].strftime('%Y-%m-%d')
+            result.append(trip_dict)
+            
+        cur.close()
+        return jsonify(result), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
