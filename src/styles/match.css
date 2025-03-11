@@ -162,3 +162,183 @@
       grid-template-columns: 1fr;
     }
   }
+
+  .match-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .trip-basic-info {
+    margin-bottom: 15px;
+  }
+  
+  .preferred-gender {
+    margin: 8px 0;
+    padding: 4px 8px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    color: #666;
+    display: inline-block;
+  }
+  
+  .preferred-gender::before {
+    content: '🧑‍🤝‍🧑';
+    margin-right: 5px;
+  }
+  
+  .match-card .trip-basic-info p {
+    margin: 8px 0;
+    line-height: 1.4;
+  }
+
+  .details-button {
+    width: 100%;
+    padding: 10px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 10px;
+  }
+  
+  .details-button:hover {
+    background-color: #2980b9;
+  }
+  
+  .trip-details-section {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+  }
+  
+  .details-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  
+  .detail-item {
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    padding: 12px;
+  }
+  
+  .detail-item p {
+    margin: 5px 0;
+    color: #666;
+  }
+  
+  .overlapping-dates {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin: 10px 0;
+  }
+  
+  /* 響應式設計 */
+  @media (max-width: 768px) {
+    .match-card {
+      padding: 15px;
+    }
+  }
+
+  /* 篩選區域樣式 */
+  .filter-section {
+    background-color: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin: 20px 0;
+  }
+  
+  .filter-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+  
+  .filter-item {
+    min-width: 120px;
+  }
+  
+  .filter-item select,
+  .filter-item input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+  
+  .budget-filter {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .budget-filter input {
+    width: 100px;
+  }
+  
+  .budget-filter span {
+    color: #666;
+  }
+  
+  .filter-buttons {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .search-button {
+    padding: 8px 16px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    white-space: nowrap;
+  }
+  
+  .search-button:hover {
+    background-color: #2980b9;
+  }
+  
+  .reset-button {
+    padding: 8px 16px;
+    background-color: #95a5a6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    white-space: nowrap;
+  }
+  
+  .reset-button:hover {
+    background-color: #7f8c8d;
+  }
+  
+  /* 響應式設計 */
+  @media (max-width: 768px) {
+    .filter-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  
+    .filter-item {
+      width: 100%;
+    }
+  
+    .budget-filter {
+      flex-wrap: wrap;
+    }
+  }

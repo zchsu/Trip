@@ -17,6 +17,7 @@ const Trip = () => {
     area: "",
     tags: "",
     budget: "",
+    preferred_gender: "any"
   });
 
   const [tripDetails, setTripDetails] = useState([]);
@@ -617,6 +618,18 @@ const handleInvitation = async (tripId, status) => {
             <input name="area" placeholder="地點" onChange={handleChange} required />
             <input name="tags" placeholder="標籤 (逗號分隔)" onChange={handleChange} />
             <input name="budget" placeholder="預算" type="number" onChange={handleChange} />
+            <div className="form-group">
+              <label>理想的旅伴類型</label>
+              <select 
+                name="preferred_gender" 
+                value={tripData.preferred_gender}
+                onChange={handleChange}
+              >
+                <option value="any">不限</option>
+                <option value="male">男</option>
+                <option value="female">女</option>
+              </select>
+            </div>
             <div>
         <h3>選擇同行好友</h3>
         {friends.map(friend => (
@@ -694,7 +707,18 @@ const handleInvitation = async (tripId, status) => {
         value={tripData.budget}
         onChange={handleChange} 
       />
-      
+      <div className="form-group">
+        <label>理想的旅伴類型</label>
+        <select 
+          name="preferred_gender" 
+          value={tripData.preferred_gender}
+          onChange={handleChange}
+        >
+          <option value="any">不限</option>
+          <option value="male">男</option>
+          <option value="female">女</option>
+        </select>
+      </div>
       <div className="participant-section">
         <h3>修改同行好友</h3>
         {friends.map(friend => (

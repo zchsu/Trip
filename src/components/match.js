@@ -8,6 +8,20 @@ const Match = () => {
     const [matchedTrips, setMatchedTrips] = useState([]);
     const navigate = useNavigate();
     const userId = localStorage.getItem("user_id");
+    const [showTripDetails, setShowTripDetails] = useState(null);
+    const [tripDetails, setTripDetails] = useState([]);
+
+    // 新增篩選條件的 state
+    const [filters, setFilters] = useState({
+        area: '',
+        dateStart: '',
+        dateEnd: '',
+        tags: '',
+        gender: 'any',
+        keyword: '',
+        budgetMin: 0,
+        budgetMax: 100000
+    });
   
     useEffect(() => {
       if (!userId) {
@@ -43,14 +57,65 @@ const Match = () => {
         try {
           const response = await fetch(`http://localhost:5000/trip/match/${tripId}`);
           const data = await response.json();
-          setMatchedTrips(data);
-          // 將字串 ID 轉換為數字，以確保比較正確
-          const numericTripId = parseInt(tripId, 10);
-          setSelectedTrip(userTrips.find(trip => trip.trip_id === numericTripId));
+          
+          // 檢查哪些篩選條件被啟用
+          const activeFilters = {
+            keyword: !!filters.keyword,
+            area: !!filters.area,
+            tags: !!filters.tags,
+            gender: filters.gender !== 'any',
+            budget: filters.budgetMin > 0 || filters.budgetMax < 100000
+          };
+    
+          // 如果沒有啟用任何篩選條件，直接顯示匹配結果
+          if (!Object.values(activeFilters).some(Boolean)) {
+            setMatchedTrips(data);
+          } else {
+            // 只應用已啟用的篩選條件
+            const filteredData = data.filter(trip => {
+              let matchesFilters = true;
+    
+              if (activeFilters.keyword) {
+                matchesFilters = matchesFilters && (
+                  trip.title.toLowerCase().includes(filters.keyword.toLowerCase()) ||
+                  trip.description.toLowerCase().includes(filters.keyword.toLowerCase())
+                );
+              }
+    
+              if (activeFilters.area) {
+                matchesFilters = matchesFilters && trip.area === filters.area;
+              }
+    
+              if (activeFilters.tags) {
+                matchesFilters = matchesFilters && filters.tags.toLowerCase().split(',').some(tag => 
+                  trip.tags.toLowerCase().includes(tag.trim())
+                );
+              }
+    
+              if (activeFilters.gender) {
+                matchesFilters = matchesFilters && trip.preferred_gender === filters.gender;
+              }
+    
+              if (activeFilters.budget) {
+                matchesFilters = matchesFilters && 
+                  trip.budget >= filters.budgetMin && 
+                  trip.budget <= filters.budgetMax;
+              }
+    
+              return matchesFilters;
+            });
+    
+            setMatchedTrips(filteredData);
+          }
+    
+          if (!selectedTrip) {
+            const numericTripId = parseInt(tripId, 10);
+            setSelectedTrip(userTrips.find(trip => trip.trip_id === numericTripId));
+          }
         } catch (error) {
           console.error("搜尋匹配行程失敗:", error);
         }
-      };
+    };
 
   const handleJoinRequest = async (tripId) => {
     try {
@@ -75,65 +140,246 @@ const Match = () => {
     }
   };
 
+  // 新增獲取行程細節的函數
+  const fetchTripDetails = async (tripId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/trip_detail/${tripId}`);
+      const data = await response.json();
+      setTripDetails(data);
+    } catch (error) {
+      console.error("獲取行程細節失敗:", error);
+    }
+  };
+
+  // 處理篩選條件變更
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  // 新增搜尋函數
+  const handleSearch = () => {
+    if (selectedTrip) {
+      findMatches(selectedTrip.trip_id);
+    }
+  };
+
+  // 重設篩選條件
+  const resetFilters = () => {
+    setFilters({
+      area: '',
+      dateStart: '',
+      dateEnd: '',
+      tags: '',
+      gender: 'any',
+      keyword: '',
+      budgetMin: 0,
+      budgetMax: 100000
+    });
+    // 重設後重新搜尋
+    if (selectedTrip) {
+      findMatches(selectedTrip.trip_id);
+    }
+  };
+
+  // 修改匹配行程列表的顯示部分
+  const renderMatchedTrips = () => (
+    <ul className="matches-list">
+      {matchedTrips.map(trip => (
+        <li key={trip.trip_id} className="match-card">
+          <div className="trip-basic-info">
+            <h3>{trip.title}</h3>
+            <p className="trip-description">{trip.description}</p>
+            <p>📍 {trip.area}</p>
+            <p>📅 {new Date(trip.start_date).toLocaleDateString()} - {new Date(trip.end_date).toLocaleDateString()}</p>
+            <p>🏷️ {trip.tags}</p>
+            <p>👤 創建者: {trip.creator_name}</p>
+            <p className="preferred-gender">
+                理想旅伴: {
+                trip.preferred_gender === 'any' ? '不限' :
+                trip.preferred_gender === 'male' ? '男性' :
+                trip.preferred_gender === 'female' ? '女性' : '未指定'
+                }
+            </p>
+            <div className="overlapping-dates">
+              <p>重疊日期：{trip.overlapping_days} 天</p>
+            </div>
+          </div>
+
+          <button 
+            className="details-button"
+            onClick={() => {
+              if (showTripDetails === trip.trip_id) {
+                setShowTripDetails(null);
+              } else {
+                setShowTripDetails(trip.trip_id);
+                fetchTripDetails(trip.trip_id);
+              }
+            }}
+          >
+            {showTripDetails === trip.trip_id ? '隱藏細節' : '查看細節'}
+          </button>
+
+          {showTripDetails === trip.trip_id && (
+            <div className="trip-details-section">
+              <h4>行程細節</h4>
+              {tripDetails.length === 0 ? (
+                <p>此行程暫無細節安排</p>
+              ) : (
+                <div className="details-list">
+                  {tripDetails
+                    .filter(detail => {
+                      const detailDate = new Date(detail.date);
+                      const tripStartDate = new Date(selectedTrip.start_date);
+                      const tripEndDate = new Date(selectedTrip.end_date);
+                      return detailDate >= tripStartDate && detailDate <= tripEndDate;
+                    })
+                    .map(detail => (
+                      <div key={detail.detail_id} className="detail-item">
+                        <p>📅 {new Date(detail.date).toLocaleDateString()}</p>
+                        <p>📍 {detail.location}</p>
+                        <p>⏰ {detail.start_time.slice(0, 5)} - {detail.end_time.slice(0, 5)}</p>
+                      </div>
+                    ))
+                  }
+                </div>
+              )}
+            </div>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+
   return (
     <div className="match-container">
-    <h1>尋找旅伴</h1>
-
-    <div className="user-trips-section">
-      <h2>選擇您要匹配的行程</h2>
-      {userTrips.length === 0 ? (
-        <div className="no-trips">
-          <p>您還沒有建立任何行程</p>
-          <button onClick={() => navigate("/trip")}>建立新行程</button>
-        </div>
-      ) : (
-        <div className="trip-selection">
-          <select 
-            onChange={(e) => findMatches(e.target.value)}
-            value={selectedTrip?.trip_id || ""}
-            className="trip-select"
+      <h1>尋找旅伴</h1>
+  
+      <div className="user-trips-section">
+        <h2>選擇您要匹配的行程</h2>
+        {userTrips.length === 0 ? (
+          <div className="no-trips">
+            <p>您還沒有建立任何行程</p>
+            <button onClick={() => navigate("/trip")}>建立新行程</button>
+          </div>
+        ) : (
+          <div className="trip-selection">
+            <select 
+              onChange={(e) => findMatches(e.target.value)}
+              value={selectedTrip?.trip_id || ""}
+              className="trip-select"
             >
-            <option value="">請選擇行程</option>
-            {userTrips.map(trip => (
+              <option value="">請選擇行程</option>
+              {userTrips.map(trip => (
                 <option key={trip.trip_id} value={trip.trip_id}>
-                {trip.title} ({new Date(trip.start_date).toLocaleDateString()} - {new Date(trip.end_date).toLocaleDateString()})
+                  {trip.title} ({new Date(trip.start_date).toLocaleDateString()} - {new Date(trip.end_date).toLocaleDateString()})
                 </option>
-            ))}
+              ))}
             </select>
-        </div>
-      )}
-    </div>
+            <div className="filter-section">
+            <div className="filter-row">
+                <div className="filter-item">
+                <select 
+                    name="area" 
+                    value={filters.area}
+                    onChange={handleFilterChange}
+                >
+                    <option value="">全部地區</option>
+                    <option value="東京">東京</option>
+                    <option value="大阪">大阪</option>
+                    <option value="京都">京都</option>
+                    <option value="札幌">札幌</option>
+                    <option value="福岡">福岡</option>
+                </select>
+                </div>
 
+                <div className="filter-item">
+                    <input
+                    type="text"
+                    name="keyword"
+                    value={filters.keyword}
+                    onChange={handleFilterChange}
+                    placeholder="搜尋關鍵字"
+                    />
+                </div>
+
+                <div className="filter-item">
+                    <input
+                    type="text"
+                    name="tags"
+                    value={filters.tags}
+                    onChange={handleFilterChange}
+                    placeholder="搜尋標籤"
+                    />
+                </div>
+
+                <div className="filter-item">
+                <select
+                    name="gender"
+                    value={filters.gender}
+                    onChange={handleFilterChange}
+                >
+                    <option value="any">性別不限</option>
+                    <option value="male">男性</option>
+                    <option value="female">女性</option>
+                </select>
+                </div>
+
+                <div className="filter-item budget-filter">
+                    <input
+                    type="number"
+                    name="budgetMin"
+                    value={filters.budgetMin}
+                    onChange={handleFilterChange}
+                    step="5000"
+                    min="0"
+                    max="100000"
+                    placeholder="最低預算"
+                    />
+                    <span>-</span>
+                    <input
+                    type="number"
+                    name="budgetMax"
+                    value={filters.budgetMax}
+                    onChange={handleFilterChange}
+                    step="5000"
+                    min="0"
+                    max="100000"
+                    placeholder="最高預算"
+                    />
+                </div>
+
+                <div className="filter-buttons">
+                    <button onClick={handleSearch} className="search-button">
+                        搜尋
+                    </button>
+                    <button onClick={resetFilters} className="reset-button">
+                        重設
+                    </button>
+                </div>
+            </div>
+            </div>
+          </div>
+        )}
+      </div>
+  
       {selectedTrip && (
         <div className="matched-trips">
           <h2>匹配結果</h2>
           {matchedTrips.length === 0 ? (
             <p>沒有找到符合的行程</p>
           ) : (
-            <ul className="matches-list">
-              {matchedTrips.map(trip => (
-                <li key={trip.trip_id} className="match-card">
-                  <h3>{trip.title}</h3>
-                  <p className="trip-description">{trip.description}</p>
-                  <p>📍 {trip.area}</p>
-                  <p>📅 {new Date(trip.start_date).toLocaleDateString()} - {new Date(trip.end_date).toLocaleDateString()}</p>
-                  <p>🏷️ {trip.tags}</p>
-                  <p>👤 創建者: {trip.creator_name}</p>
-                  <div className="overlapping-dates">
-                    <p>重疊日期：{trip.overlapping_days} 天</p>
-                  </div>
-                  <button 
-                    onClick={() => handleJoinRequest(trip.trip_id)}
-                    className="join-button"
-                  >
-                    申請加入
-                  </button>
-                </li>
-              ))}
-            </ul>
+            renderMatchedTrips()
           )}
         </div>
       )}
+  
+      <div className="navigation-buttons">
+        <button onClick={() => navigate("/")}>返回首頁</button>
+      </div>
     </div>
   );
 };

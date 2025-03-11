@@ -94,6 +94,7 @@ def add_trip():
     area = data.get('area')
     tags = data.get('tags')
     budget = data.get('budget')
+    preferred_gender = data.get('preferred_gender', 'any')  # 新增這行
 
     if not user_id or not title or not start_date or not end_date or not area:
         return jsonify({'error': '缺少必要欄位'}), 400
@@ -101,9 +102,11 @@ def add_trip():
     try:
         cur = mysql.connection.cursor()
         cur.execute("""
-            INSERT INTO trip (user_id, title, description, start_date, end_date, area, tags, budget)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        """, (user_id, title, description, start_date, end_date, area, tags, budget))
+            INSERT INTO trip (user_id, title, description, start_date, end_date, 
+                            area, tags, budget, preferred_gender)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (user_id, title, description, start_date, end_date, 
+              area, tags, budget, preferred_gender))
         mysql.connection.commit()
         trip_id = cur.lastrowid
         cur.close()
@@ -148,13 +151,17 @@ def update_trip(trip_id):
     area = data.get('area')
     tags = data.get('tags')
     budget = data.get('budget')
+    preferred_gender = data.get('preferred_gender', 'any')  # 新增這行
 
     try:
         cur = mysql.connection.cursor()
         cur.execute("""
-            UPDATE trip SET title=%s, description=%s, start_date=%s, end_date=%s, area=%s, tags=%s, budget=%s, updated_at=%s
+            UPDATE trip 
+            SET title=%s, description=%s, start_date=%s, end_date=%s, 
+                area=%s, tags=%s, budget=%s, preferred_gender=%s, updated_at=%s
             WHERE trip_id=%s
-        """, (title, description, start_date, end_date, area, tags, budget, datetime.now(), trip_id))
+        """, (title, description, start_date, end_date, area, tags, 
+              budget, preferred_gender, datetime.now(), trip_id))
         mysql.connection.commit()
         cur.close()
         return jsonify({'message': '行程更新成功'}), 200
@@ -592,6 +599,7 @@ def match_trips(trip_id):
                 t.start_date,
                 t.end_date,
                 t.tags,
+                t.preferred_gender,
                 u.username as creator_name,
                 DATEDIFF(
                     LEAST(t.end_date, %s),
