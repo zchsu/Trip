@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "../styles/trip.css";
 
 const Trip = () => {
   const navigate = useNavigate();
@@ -398,7 +399,7 @@ const handleInvitation = async (tripId, status) => {
 };
   
   return (
-    <div>
+    <div className="trip-container">
       {mode === "list" && (
           <>
             <h1>行程管理</h1>
@@ -458,7 +459,7 @@ const handleInvitation = async (tripId, status) => {
             {trips.length === 0 ? (
               <p>目前沒有行程</p>
             ) : (
-              <ul>
+              <ul className="trip-list">
                 {trips.map((trip) => (
                   <li key={trip.trip_id}>
                     <h3>{trip.title}</h3>

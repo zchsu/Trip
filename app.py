@@ -563,6 +563,68 @@ def handle_invitation(trip_id, user_id):
         return jsonify({'message': f'行程邀請已{status}'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+@app.route('/trip/match/<int:trip_id>', methods=['GET'])
+def match_trips(trip_id):
+    try:
+        cur = mysql.connection.cursor()
+        
+        # 先獲取選擇的行程資訊
+        cur.execute("""
+            SELECT area, start_date, end_date
+            FROM trip
+            WHERE trip_id = %s
+        """, (trip_id,))
+        source_trip = cur.fetchone()
+        
+        if not source_trip:
+            return jsonify({'error': '找不到行程'}), 404
+            
+        area, start_date, end_date = source_trip
+        
+        # 搜尋相同地點且日期有重疊的行程
+        cur.execute("""
+            SELECT 
+                t.trip_id,
+                t.title,
+                t.description,
+                t.area,
+                t.start_date,
+                t.end_date,
+                t.tags,
+                u.username as creator_name,
+                DATEDIFF(
+                    LEAST(t.end_date, %s),
+                    GREATEST(t.start_date, %s)
+                ) + 1 as overlapping_days
+            FROM trip t
+            JOIN users u ON t.user_id = u.user_id
+            WHERE t.trip_id != %s
+            AND t.area = %s
+            AND t.end_date >= %s
+            AND t.start_date <= %s
+            HAVING overlapping_days > 0
+            ORDER BY overlapping_days DESC
+        """, (end_date, start_date, trip_id, area, start_date, end_date))
+        
+        columns = [desc[0] for desc in cur.description]
+        matches = cur.fetchall()
+        
+        result = []
+        for match in matches:
+            match_dict = dict(zip(columns, match))
+            # 確保日期格式正確
+            match_dict['start_date'] = match_dict['start_date'].strftime('%Y-%m-%d')
+            match_dict['end_date'] = match_dict['end_date'].strftime('%Y-%m-%d')
+            # 確保 trip_id 是整數
+            match_dict['trip_id'] = int(match_dict['trip_id'])
+            result.append(match_dict)
+            
+        cur.close()
+        return jsonify(result), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

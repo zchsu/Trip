@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "../styles/homepage.css";
 
 const HomePage = () => {
   const [username, setUsername] = useState(null);
@@ -14,7 +15,7 @@ const HomePage = () => {
     const storedUserId = localStorage.getItem("user_id");
     if (storedUsername) {
       setUsername(storedUsername);
-      setUserId(storedUserId);
+      setUserId(parseInt(storedUserId, 10));
     }
   }, []);
 
@@ -64,10 +65,12 @@ const HomePage = () => {
   };
 
   return (
-    <div>
-      <h1>歡迎來到 TripMate</h1>
-      <h2>這是一個讓旅伴配對的系統</h2>
-      <p>{username ? `Hi 旅行者, ${username} !` : "請登入或註冊"}</p>
+    <div className="home-container">
+      <div className="welcome-section">
+        <h1>歡迎來到 TripMate</h1>
+        <h2>這是一個讓旅伴配對的系統</h2>
+        <p>{username ? `Hi 旅行者, ${username} !` : "請登入或註冊"}</p>
+      </div>
 
       {username && (
         <div className="search-section">
@@ -100,17 +103,20 @@ const HomePage = () => {
         </div>
       )}
 
-      {username ? (
-        <>
-          <button onClick={handleLogout}>登出</button>
-          <button onClick={() => navigate("/trip")}>管理行程</button>
-        </>
-      ) : (
-        <div>
-          <button onClick={() => navigate("/login")}>登入</button>
-          <button onClick={() => navigate("/register")}>註冊</button>
-        </div>
-      )}
+      <div className="auth-buttons">
+        {username ? (
+          <>
+            <button onClick={handleLogout}>登出</button>
+            <button onClick={() => navigate("/trip")}>管理行程</button>
+            <button onClick={() => navigate("/match")} className="match-button">尋找旅伴</button>
+          </>
+        ) : (
+          <>
+            <button onClick={() => navigate("/login")}>登入</button>
+            <button onClick={() => navigate("/register")}>註冊</button>
+          </>
+        )}
+      </div>
     </div>
   );
 };

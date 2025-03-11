@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import "../styles/login.css";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -35,25 +36,38 @@ const Login = () => {
   };
 
   return (
-    <div>
-      <h2>登入</h2>
-      <form onSubmit={handleLogin}>
-        <input
-          type="text"
-          placeholder="使用者名稱"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="密碼"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <button type="submit">登入</button>
-      </form>
+    <div className="login-container">
+      <div className="login-box">
+        <h2 className="login-title">登入</h2>
+        <form onSubmit={handleLogin} className="login-form">
+          <div className="input-group">
+            <label htmlFor="username">使用者名稱</label>
+            <input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </div>
+          <div className="input-group">
+            <label htmlFor="password">密碼</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <button type="submit" className="login-button">
+            登入
+          </button>
+        </form>
+        <div className="register-link">
+          還沒有帳號？<Link to="/register">立即註冊</Link>
+        </div>
+      </div>
     </div>
   );
 };

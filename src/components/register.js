@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import "../styles/register.css";
 
 const Register = () => {
   const [username, setUsername] = useState("");
@@ -29,13 +30,38 @@ const Register = () => {
   };
 
   return (
-    <div>
-      <h2>註冊</h2>
-      <form onSubmit={handleRegister}>
-        <input type="text" placeholder="使用者名稱" value={username} onChange={(e) => setUsername(e.target.value)} required />
-        <input type="password" placeholder="密碼" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        <button type="submit">註冊</button>
-      </form>
+    <div className="register-container">
+      <div className="register-box">
+        <h2 className="register-title">註冊帳號</h2>
+        <form onSubmit={handleRegister} className="register-form">
+          <div className="input-group">
+            <label htmlFor="username">使用者名稱</label>
+            <input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </div>
+          <div className="input-group">
+            <label htmlFor="password">密碼</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <button type="submit" className="register-button">
+            註冊
+          </button>
+        </form>
+        <div className="login-link">
+          已經有帳號了？<Link to="/login">立即登入</Link>
+        </div>
+      </div>
     </div>
   );
 };
