@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import "../styles/trip.css";
 
 const Trip = () => {
@@ -482,6 +482,15 @@ const handleInvitation = async (tripId, status) => {
                     {showDetails && selectedTripId === trip.trip_id && (
                       <div className="trip-details">
                         <h4>行程細節</h4>
+
+                        <div className="trip-actions">
+                          <Link 
+                            to={`/locker?area=${encodeURIComponent(trip.area)}`} 
+                            className="locker-search-btn"
+                          >
+                            🔍 搜尋附近寄物櫃
+                          </Link>
+                        </div>
 
                         {/* 參與者列表 */}
                         <div className="participants">

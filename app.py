@@ -4,6 +4,17 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from flask_mysqldb import MySQL
 from flask_cors import CORS  # <-- 新增這行
 from datetime import datetime
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from bs4 import BeautifulSoup
+from geopy.geocoders import Nominatim
+import urllib.parse
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
 app = Flask(__name__)
 CORS(app)  # <-- 允許前端請求後端
@@ -629,6 +640,135 @@ def get_all_trips():
         return jsonify(result), 200
         
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+# 寄物櫃搜尋函數
+def scrape_lockers(search_params):
+    # 使用 webdriver_manager 自動管理 ChromeDriver
+    from webdriver_manager.chrome import ChromeDriverManager
+    from selenium.webdriver.chrome.service import Service
+    
+    # 設定 Chrome 選項
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--no-sandbox")  # 新增
+    chrome_options.add_argument("--disable-dev-shm-usage")  # 新增
+    chrome_options.add_argument("--remote-debugging-port=9222")  # 新增
+    chrome_options.add_argument("--window-size=1920,1080")
+    
+    try:
+        # 使用 webdriver_manager 自動安裝和管理 ChromeDriver
+        service = Service(ChromeDriverManager().install())
+        driver = None
+        
+        try:
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+            
+            # 設定頁面載入超時時間
+            driver.set_page_load_timeout(30)
+            
+            # 使用 geopy 解析地址
+            geolocator = Nominatim(user_agent="my_geocoder")
+            location_data = geolocator.geocode(search_params['location'])
+            
+            if not location_data:
+                return {'error': '無法找到該地點'}
+            
+            # 構建搜尋 URL
+            base_url = "https://cloak.ecbo.io/zh-TW/locations"
+            params = {
+                'name': search_params['location'],
+                'startDate': search_params['startDate'],
+                'endDate': search_params.get('endDate', search_params['startDate']),
+                'startDateTimeHour': search_params['startTimeHour'],
+                'startDateTimeMin': search_params['startTimeMin'],
+                'endDateTimeHour': search_params['endTimeHour'],
+                'endDateTimeMin': search_params['endTimeMin'],
+                'bagSize': search_params['bagSize'],
+                'suitcaseSize': search_params['suitcaseSize'],
+                'lat': location_data.latitude,
+                'lon': location_data.longitude
+            }
+            
+            query_string = urllib.parse.urlencode(params)
+            url = f"{base_url}?{query_string}"
+            print("DEBUG - 完整搜尋 URL:", url)
+            print("DEBUG - 搜尋參數:", params)
+            
+            # 訪問網頁
+            driver.get(url)
+            
+            # 等待頁面載入
+            try:
+                WebDriverWait(driver, 20).until(
+                    EC.presence_of_element_located((By.CLASS_NAME, "SpaceCard_space__YnURE"))
+                )
+            except Exception as wait_error:
+                return {'error': '頁面載入超時'}
+            
+            # 解析結果
+            soup = BeautifulSoup(driver.page_source, 'html.parser')
+            cards = soup.find_all('li', class_='SpaceCard_space__YnURE')
+            
+            results = []
+            for card in cards:
+                try:
+                    result = {
+                        'name': card.find('strong', class_='SpaceCard_nameText__308Dp').text.strip(),
+                        'category': card.find('div', class_='SpaceCard_category__2rx7q').text.strip(),
+                        'rating': card.find('span', class_='SpaceCard_ratingPoint__2CaOa').text.strip(),
+                        'suitcase_price': card.find('span', class_='SpaceCard_priceCarry__3Owgr').text.strip(),
+                        'bag_price': card.find('span', class_='SpaceCard_priceBag__Bv_Oz').text.strip(),
+                        'image_url': card.find('img')['src'],
+                        'link': f"https://cloak.ecbo.io{card.find('a', class_='SpaceCard_spaceLink__2MeRc')['href']}"
+                    }
+                    results.append(result)
+                except Exception as parse_error:
+                    print(f"解析卡片資料時發生錯誤: {parse_error}")
+                    continue
+            
+            return results
+            
+        finally:
+            if driver:
+                driver.quit()
+                
+    except Exception as e:
+        print(f"爬蟲錯誤: {e}")
+        return {'error': str(e)}
+
+# 寄物櫃搜尋 API 端點
+@app.route('/search-lockers', methods=['POST'])
+def search_lockers():
+    try:
+        data = request.get_json()
+        print("Received data:", data)  # 偵錯用
+        
+        # 驗證必要欄位
+        required_fields = ['location', 'startDate', 'startTimeHour', 
+                         'startTimeMin', 'endTimeHour', 'endTimeMin']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({
+                    'error': f'缺少必要欄位: {field}',
+                    'received_data': data
+                }), 400
+        
+        # 設置默認值
+        data.setdefault('bagSize', '0')
+        data.setdefault('suitcaseSize', '0')
+        data.setdefault('endDate', data['startDate'])
+            
+        results = scrape_lockers(data)
+        
+        if isinstance(results, dict) and 'error' in results:
+            return jsonify(results), 400
+            
+        return jsonify(results), 200
+        
+    except Exception as e:
+        print(f"API error: {e}")  # 偵錯用
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
