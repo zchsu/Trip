@@ -24,7 +24,10 @@ const Locker = () => {
   const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
   const minutes = ['00', '15', '30', '45'];
 
-  const handleSearch = async () => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
+
+  const handleSearch = async (page = 1) => {
     setLoading(true);
     setError(null);
     
@@ -42,21 +45,39 @@ const Locker = () => {
       if (!searchParams.endTimeHour || !searchParams.endTimeMin) {
         throw new Error('請選擇結束時間');
       }
-
+  
+      // 創建純淨的搜尋參數物件 - 只包含需要的數據，避免循環引用
+      const searchData = {
+        location: searchParams.location,
+        startDate: searchParams.startDate,
+        endDate: searchParams.endDate || searchParams.startDate,
+        startTimeHour: searchParams.startTimeHour,
+        startTimeMin: searchParams.startTimeMin,
+        endTimeHour: searchParams.endTimeHour,
+        endTimeMin: searchParams.endTimeMin,
+        bagSize: searchParams.bagSize,
+        suitcaseSize: searchParams.suitcaseSize,
+        page: page,
+        per_page: 5
+      };
+  
       const response = await fetch('http://localhost:5000/search-lockers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(searchParams)
+        body: JSON.stringify(searchData)
       });
-
+  
       if (!response.ok) {
-        throw new Error('搜尋失敗，請稍後再試');
+        const errorData = await response.json();
+        throw new Error(errorData.error || '搜尋失敗，請稍後再試');
       }
-
+  
       const data = await response.json();
-      setSearchResults(data);
+      setSearchResults(data.results || []);
+      setPagination(data.pagination);
+      setCurrentPage(page);
     } catch (error) {
       setError(error.message);
       console.error('搜尋失敗:', error);
@@ -96,6 +117,11 @@ const Locker = () => {
       ...searchParams,
       [type]: newValue.toString()
     });
+  };
+
+  // 使用一個正常的函數進行搜尋，避免事件對象被傳入
+  const handleSearchClick = () => {
+    handleSearch(1);
   };
 
   return (
@@ -230,7 +256,7 @@ const Locker = () => {
         {error && <div className="error-message">{error}</div>}
 
         <div className="button-group">
-          <button onClick={handleSearch} disabled={loading} className="search-button">
+          <button onClick={handleSearchClick} disabled={loading} className="search-button">
             {loading ? '搜尋中...' : '搜尋'}
           </button>
           <button onClick={handleReset} className="reset-button">
@@ -268,6 +294,35 @@ const Locker = () => {
           </div>
         ))}
       </div>
+
+      {/* 分頁控制 */}
+      {pagination && pagination.total_pages > 1 && (
+        <div className="pagination">
+          <button 
+            onClick={() => {
+              //alert('正在搜尋上一頁，請稍候...');
+              handleSearch(currentPage - 1);
+            }}
+            disabled={currentPage === 1 || loading}
+            className="page-button"
+          >
+            {loading && currentPage > 1 ? '搜尋中...' : '上一頁'}
+          </button>
+          <span className="page-info">
+            第 {currentPage} 頁，共 {pagination.total_pages} 頁
+          </span>
+          <button 
+            onClick={() => {
+              //alert('正在搜尋下一頁，請稍候...');
+              handleSearch(currentPage + 1);
+            }}
+            disabled={currentPage === pagination.total_pages || loading}
+            className="page-button"
+          >
+            {loading && currentPage < pagination.total_pages ? '搜尋中...' : '下一頁'}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

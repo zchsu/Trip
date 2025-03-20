@@ -15,6 +15,9 @@ from geopy.geocoders import Nominatim
 import urllib.parse
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
+import json
+import threading
+import time
 
 app = Flask(__name__)
 CORS(app)  # <-- 允許前端請求後端
@@ -642,108 +645,248 @@ def get_all_trips():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-# 寄物櫃搜尋函數
-def scrape_lockers(search_params):
-    # 使用 webdriver_manager 自動管理 ChromeDriver
-    from webdriver_manager.chrome import ChromeDriverManager
-    from selenium.webdriver.chrome.service import Service
+
+# 緩存存儲
+cache = {}
+CACHE_EXPIRY = 3600  # 緩存過期時間（秒）
+# 全局的 WebDriver 實例
+driver_pool = []
+driver_pool_lock = threading.Lock()
+MAX_DRIVERS = 2  # 最大 WebDriver 池大小
+
+def get_cache_key(search_params, page):
+    """生成緩存鍵"""
+    key_parts = [
+        search_params['location'],
+        search_params['startDate'],
+        search_params.get('endDate', search_params['startDate']),
+        f"{search_params['startTimeHour']}:{search_params['startTimeMin']}",
+        f"{search_params['endTimeHour']}:{search_params['endTimeMin']}",
+        search_params['bagSize'],
+        search_params['suitcaseSize'],
+        str(page)
+    ]
+    return "_".join(key_parts)
+
+def init_driver_pool():
+    """初始化 WebDriver 池"""
+    global driver_pool
     
-    # 設定 Chrome 選項
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--no-sandbox")  # 新增
-    chrome_options.add_argument("--disable-dev-shm-usage")  # 新增
-    chrome_options.add_argument("--remote-debugging-port=9222")  # 新增
-    chrome_options.add_argument("--window-size=1920,1080")
+    print("初始化 WebDriver 池...")
     
-    try:
-        # 使用 webdriver_manager 自動安裝和管理 ChromeDriver
-        service = Service(ChromeDriverManager().install())
-        driver = None
-        
+    for _ in range(MAX_DRIVERS):
         try:
+            # 設定 Chrome 選項 - 更激進的優化設置
+            chrome_options = Options()
+            chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-extensions")
+            chrome_options.add_argument("--disable-images")  # 禁用圖片載入
+            chrome_options.add_argument("--blink-settings=imagesEnabled=false")  # 另一種禁用圖片方式
+            chrome_options.add_argument("--window-size=1280,720")  # 較小的窗口大小
+            
+            # 禁用 JavaScript (可能會破壞某些頁面功能，視情況使用)
+            # chrome_options.add_argument("--disable-javascript")
+            
+            # 使用 webdriver_manager 自動安裝和管理 ChromeDriver
+            service = Service(ChromeDriverManager().install())
             driver = webdriver.Chrome(service=service, options=chrome_options)
             
             # 設定頁面載入超時時間
-            driver.set_page_load_timeout(30)
+            driver.set_page_load_timeout(15)  # 減少超時時間
             
-            # 使用 geopy 解析地址
-            geolocator = Nominatim(user_agent="my_geocoder")
-            location_data = geolocator.geocode(search_params['location'])
+            # 預熱：訪問目標網站首頁
+            driver.get("https://cloak.ecbo.io/zh-TW")
             
-            if not location_data:
-                return {'error': '無法找到該地點'}
-            
-            # 構建搜尋 URL
-            base_url = "https://cloak.ecbo.io/zh-TW/locations"
-            params = {
-                'name': search_params['location'],
-                'startDate': search_params['startDate'],
-                'endDate': search_params.get('endDate', search_params['startDate']),
-                'startDateTimeHour': search_params['startTimeHour'],
-                'startDateTimeMin': search_params['startTimeMin'],
-                'endDateTimeHour': search_params['endTimeHour'],
-                'endDateTimeMin': search_params['endTimeMin'],
-                'bagSize': search_params['bagSize'],
-                'suitcaseSize': search_params['suitcaseSize'],
-                'lat': location_data.latitude,
-                'lon': location_data.longitude
-            }
-            
-            query_string = urllib.parse.urlencode(params)
-            url = f"{base_url}?{query_string}"
-            print("DEBUG - 完整搜尋 URL:", url)
-            print("DEBUG - 搜尋參數:", params)
-            
-            # 訪問網頁
-            driver.get(url)
-            
-            # 等待頁面載入
-            try:
-                WebDriverWait(driver, 20).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, "SpaceCard_space__YnURE"))
-                )
-            except Exception as wait_error:
-                return {'error': '頁面載入超時'}
-            
-            # 解析結果
-            soup = BeautifulSoup(driver.page_source, 'html.parser')
-            cards = soup.find_all('li', class_='SpaceCard_space__YnURE')
-            
-            results = []
-            for card in cards:
-                try:
-                    result = {
-                        'name': card.find('strong', class_='SpaceCard_nameText__308Dp').text.strip(),
-                        'category': card.find('div', class_='SpaceCard_category__2rx7q').text.strip(),
-                        'rating': card.find('span', class_='SpaceCard_ratingPoint__2CaOa').text.strip(),
-                        'suitcase_price': card.find('span', class_='SpaceCard_priceCarry__3Owgr').text.strip(),
-                        'bag_price': card.find('span', class_='SpaceCard_priceBag__Bv_Oz').text.strip(),
-                        'image_url': card.find('img')['src'],
-                        'link': f"https://cloak.ecbo.io{card.find('a', class_='SpaceCard_spaceLink__2MeRc')['href']}"
-                    }
-                    results.append(result)
-                except Exception as parse_error:
-                    print(f"解析卡片資料時發生錯誤: {parse_error}")
-                    continue
-            
-            return results
-            
-        finally:
-            if driver:
-                driver.quit()
+            with driver_pool_lock:
+                driver_pool.append(driver)
                 
+            print(f"WebDriver #{len(driver_pool)} 已初始化")
+            
+        except Exception as e:
+            print(f"初始化 WebDriver 失敗: {e}")
+
+def get_driver():
+    """從池中獲取 WebDriver，如果池空則等待"""
+    max_wait = 30  # 最大等待時間（秒）
+    start_time = time.time()
+    
+    while time.time() - start_time < max_wait:
+        with driver_pool_lock:
+            if driver_pool:
+                return driver_pool.pop()
+        
+        # 如果沒有可用的 driver，等待一段時間再嘗試
+        time.sleep(0.5)
+    
+    # 如果等待超時，創建一個新的 driver（應急措施）
+    print("警告：WebDriver 池已空，創建新實例")
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-extensions")
+    chrome_options.add_argument("--window-size=1280,720")
+    
+    service = Service(ChromeDriverManager().install())
+    return webdriver.Chrome(service=service, options=chrome_options)
+
+def return_driver(driver):
+    """將 WebDriver 返回池中"""
+    try:
+        # 清除所有 cookie 並重置瀏覽器狀態
+        driver.delete_all_cookies()
+        
+        with driver_pool_lock:
+            driver_pool.append(driver)
+            
+    except Exception as e:
+        print(f"返回 WebDriver 到池時出錯: {e}")
+        try:
+            driver.quit()
+        except:
+            pass
+
+def scrape_lockers(search_params, page=1, per_page=5):
+    """爬取寄物櫃資訊 - 優化版本"""
+    driver = None
+    
+    try:
+        # 從驅動池獲取 driver
+        driver = get_driver()
+        
+        # 使用 geopy 解析地址
+        geolocator = Nominatim(user_agent="my_geocoder")
+        location_data = geolocator.geocode(search_params['location'])
+        
+        if not location_data:
+            return {'error': '無法找到該地點'}
+        
+        # 構建搜尋 URL
+        base_url = "https://cloak.ecbo.io/zh-TW/locations"
+        params = {
+            'name': search_params['location'],
+            'startDate': search_params['startDate'],
+            'endDate': search_params.get('endDate', search_params['startDate']),
+            'startDateTimeHour': search_params['startTimeHour'],
+            'startDateTimeMin': search_params['startTimeMin'],
+            'endDateTimeHour': search_params['endTimeHour'],
+            'endDateTimeMin': search_params['endTimeMin'],
+            'bagSize': search_params['bagSize'],
+            'suitcaseSize': search_params['suitcaseSize'],
+            'lat': location_data.latitude,
+            'lon': location_data.longitude,
+            'page': page
+        }
+        
+        query_string = urllib.parse.urlencode(params)
+        url = f"{base_url}?{query_string}"
+        print(f"訪問 URL: {url}")
+        
+        # 訪問網頁
+        start_time = time.time()
+        driver.get(url)
+        
+        # 等待特定元素載入，比等待整個頁面載入更高效
+        try:
+            # 首先嘗試快速找到結果
+            # 使用 presence_of_element_located 而不是 visibility_of_element_located
+            # presence 只檢查 DOM 中是否存在，不檢查可見性，更快
+            element = WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "SpaceCard_space__YnURE"))
+            )
+            print(f"找到結果，耗時: {time.time() - start_time:.2f}秒")
+        except:
+            # 如果沒有找到結果，可能是沒有結果或頁面結構不同
+            print("沒有找到預期的結果元素，繼續解析...")
+            # 給頁面多一些時間載入
+            time.sleep(2)
+        
+        # 解析結果
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        cards = soup.find_all('li', class_='SpaceCard_space__YnURE')
+        
+        # 如果沒找到卡片，可能是加載未完成或網頁結構變化
+        if not cards:
+            # 嘗試查找頁面上的其他提示
+            no_results = soup.find('div', class_='NoResult_noResult__33c4l')
+            if no_results:
+                return {
+                    'results': [],
+                    'pagination': {
+                        'current_page': page,
+                        'total_pages': 0,
+                        'total_items': 0,
+                        'per_page': per_page
+                    }
+                }
+        
+        # 取得總項目數
+        total_items = len(cards)
+        total_pages = (total_items + per_page - 1) // per_page if total_items > 0 else 1
+        
+        # 只處理指定頁數的項目
+        start_idx = (page - 1) * per_page
+        end_idx = start_idx + per_page
+        current_page_cards = cards[start_idx:min(end_idx, len(cards))]
+        
+        results = []
+        for card in current_page_cards:
+            try:
+                name_element = card.find('strong', class_='SpaceCard_nameText__308Dp')
+                category_element = card.find('div', class_='SpaceCard_category__2rx7q')
+                rating_element = card.find('span', class_='SpaceCard_ratingPoint__2CaOa')
+                suitcase_price_element = card.find('span', class_='SpaceCard_priceCarry__3Owgr')
+                bag_price_element = card.find('span', class_='SpaceCard_priceBag__Bv_Oz')
+                image_element = card.find('img')
+                link_element = card.find('a', class_='SpaceCard_spaceLink__2MeRc')
+                
+                result = {
+                    'name': name_element.text.strip() if name_element else '未知名稱',
+                    'category': category_element.text.strip() if category_element else '未分類',
+                    'rating': rating_element.text.strip() if rating_element else 'N/A',
+                    'suitcase_price': suitcase_price_element.text.strip() if suitcase_price_element else '價格未知',
+                    'bag_price': bag_price_element.text.strip() if bag_price_element else '價格未知',
+                    'image_url': image_element['src'] if image_element and 'src' in image_element.attrs else '',
+                    'link': f"https://cloak.ecbo.io{link_element['href']}" if link_element and 'href' in link_element.attrs else '#'
+                }
+                results.append(result)
+            except Exception as parse_error:
+                print(f"解析卡片資料時發生錯誤: {parse_error}")
+                continue
+        
+        return {
+            'results': results,
+            'pagination': {
+                'current_page': page,
+                'total_pages': total_pages,
+                'total_items': total_items,
+                'per_page': per_page
+            }
+        }
+            
     except Exception as e:
         print(f"爬蟲錯誤: {e}")
         return {'error': str(e)}
+    finally:
+        if driver:
+            try:
+                return_driver(driver)
+            except:
+                try:
+                    driver.quit()
+                except:
+                    pass
 
-# 寄物櫃搜尋 API 端點
 @app.route('/search-lockers', methods=['POST'])
 def search_lockers():
     try:
         data = request.get_json()
-        print("Received data:", data)  # 偵錯用
+        page = int(data.get('page', 1))
+        per_page = int(data.get('per_page', 5))
         
         # 驗證必要欄位
         required_fields = ['location', 'startDate', 'startTimeHour', 
@@ -759,17 +902,46 @@ def search_lockers():
         data.setdefault('bagSize', '0')
         data.setdefault('suitcaseSize', '0')
         data.setdefault('endDate', data['startDate'])
-            
-        results = scrape_lockers(data)
+        
+        # 檢查緩存
+        cache_key = get_cache_key(data, page)
+        current_time = datetime.now().timestamp()
+        
+        if cache_key in cache and (current_time - cache[cache_key]['timestamp']) < CACHE_EXPIRY:
+            print(f"使用緩存結果: {cache_key}")
+            return jsonify(cache[cache_key]['data']), 200
+        
+        # 從網站爬取數據
+        results = scrape_lockers(data, page, per_page)
         
         if isinstance(results, dict) and 'error' in results:
             return jsonify(results), 400
+        
+        # 保存到緩存
+        cache[cache_key] = {
+            'data': results,
+            'timestamp': current_time
+        }
+        
+        # 緩存清理（簡單版本）
+        if len(cache) > 100:  # 如果緩存條目過多
+            # 刪除最舊的緩存
+            oldest_key = min(cache.keys(), key=lambda k: cache[k]['timestamp'])
+            del cache[oldest_key]
             
         return jsonify(results), 200
         
     except Exception as e:
-        print(f"API error: {e}")  # 偵錯用
+        print(f"API error: {e}")
         return jsonify({'error': str(e)}), 500
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# 在更新版本的 Flask 中使用 with_app_context
+if __name__ == "__main__":
+    # 直接初始化 WebDriver 池
+    init_driver_pool()
+    app.run(debug=True, port=5000)
+else:
+    # 生產環境中（如 WSGI）初始化 WebDriver 池
+    init_thread = threading.Thread(target=init_driver_pool)
+    init_thread.daemon = True  # 設為守護線程，這樣主進程結束時它會自動終止
+    init_thread.start()
