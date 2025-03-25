@@ -735,10 +735,17 @@ def get_driver():
     return webdriver.Chrome(service=service, options=chrome_options)
 
 def return_driver(driver):
-    """將 WebDriver 返回池中"""
+    """將 WebDriver 返回池中，並徹底清除狀態"""
     try:
-        # 清除所有 cookie 並重置瀏覽器狀態
+        # 清除所有 cookie
         driver.delete_all_cookies()
+        
+        # 清除 localStorage 和 sessionStorage
+        driver.execute_script("window.localStorage.clear();")
+        driver.execute_script("window.sessionStorage.clear();")
+        
+        # 重置到空白頁面以終止所有進行中的請求和腳本
+        driver.get("about:blank")
         
         with driver_pool_lock:
             driver_pool.append(driver)
@@ -844,6 +851,21 @@ def scrape_lockers(search_params, page=1, per_page=5):
                 image_element = card.find('img')
                 link_element = card.find('a', class_='SpaceCard_spaceLink__2MeRc')
                 
+                # 構建預約鏈接，確保用戶輸入參數正確傳遞
+                link_element = card.find('a', class_='SpaceCard_spaceLink__2MeRc')
+                base_link = f"https://cloak.ecbo.io{link_element['href']}" if link_element and 'href' in link_element.attrs else '#'
+                
+                # 檢查鏈接是否已包含參數
+                if '?' in base_link:
+                    link_url = f"{base_link}&startDate={search_params['startDate']}&endDate={search_params.get('endDate', search_params['startDate'])}"
+                else:
+                    link_url = f"{base_link}?startDate={search_params['startDate']}&endDate={search_params.get('endDate', search_params['startDate'])}"
+                
+                # 添加時間參數
+                link_url += f"&startDateTimeHour={search_params['startTimeHour']}&startDateTimeMin={search_params['startTimeMin']}"
+                link_url += f"&endDateTimeHour={search_params['endTimeHour']}&endDateTimeMin={search_params['endTimeMin']}"
+                link_url += f"&bagSize={search_params['bagSize']}&suitcaseSize={search_params['suitcaseSize']}"
+                
                 result = {
                     'name': name_element.text.strip() if name_element else '未知名稱',
                     'category': category_element.text.strip() if category_element else '未分類',
@@ -851,7 +873,7 @@ def scrape_lockers(search_params, page=1, per_page=5):
                     'suitcase_price': suitcase_price_element.text.strip() if suitcase_price_element else '價格未知',
                     'bag_price': bag_price_element.text.strip() if bag_price_element else '價格未知',
                     'image_url': image_element['src'] if image_element and 'src' in image_element.attrs else '',
-                    'link': f"https://cloak.ecbo.io{link_element['href']}" if link_element and 'href' in link_element.attrs else '#'
+                    'link': link_url
                 }
                 results.append(result)
             except Exception as parse_error:

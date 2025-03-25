@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-//import './locker.css';
 
 const Locker = () => {
   const navigate = useNavigate();
@@ -26,6 +25,24 @@ const Locker = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState(null);
+
+  // 生成預約連結的函數
+  const generateBookingLink = (baseLink) => {
+    const params = new URLSearchParams();
+    params.append('startDate', searchParams.startDate);
+    params.append('endDate', searchParams.endDate || searchParams.startDate);
+    params.append('startDateTimeHour', searchParams.startTimeHour);
+    params.append('startDateTimeMin', searchParams.startTimeMin);
+    params.append('endDateTimeHour', searchParams.endTimeHour);
+    params.append('endDateTimeMin', searchParams.endTimeMin);
+    params.append('bagSize', searchParams.bagSize);
+    params.append('suitcaseSize', searchParams.suitcaseSize);
+    
+    // 取出基本鏈接的路徑部分（去掉任何已有的查詢參數）
+    const baseUrl = baseLink.split('?')[0];
+    
+    return `${baseUrl}?${params.toString()}`;
+  };
 
   const handleSearch = async (page = 1) => {
     setLoading(true);
@@ -75,7 +92,15 @@ const Locker = () => {
       }
   
       const data = await response.json();
-      setSearchResults(data.results || []);
+      
+      // 修改結果中的連結，使用前端生成的完整參數
+      const resultsWithCorrectLinks = data.results.map(item => ({
+        ...item,
+        originalLink: item.link,  // 保存原始連結以備不時之需
+        link: generateBookingLink(item.link)  // 使用我們的函數生成新連結
+      }));
+      
+      setSearchResults(resultsWithCorrectLinks);
       setPagination(data.pagination);
       setCurrentPage(page);
     } catch (error) {
@@ -124,11 +149,23 @@ const Locker = () => {
     handleSearch(1);
   };
 
+  // 處理連結點擊的函數，可以用於調試或添加自定義行為
+  const handleLinkClick = (e, link) => {
+    // 如果需要在點擊連結時執行一些額外邏輯，可以在這裡添加
+    console.log("點擊預約連結:", link);
+    
+    // 這裡我們可以在控制台輸出所有搜索參數，用於調試
+    console.log("搜索參數:", searchParams);
+    
+    // 不阻止默認行為，讓用戶正常導航到連結
+  };
+
   return (
     <div className="locker-container">
       <h1>寄物處搜尋</h1>
       
       <div className="search-form">
+        {/* 表單內容保持不變 */}
         <div className="form-group">
           <label>地點</label>
           <input
@@ -204,60 +241,68 @@ const Locker = () => {
         </div>
 
         <div className="form-group">
-        <label>行李數量</label>
-        <div className="baggage-inputs">
-          <div className="baggage-counter">
-            <span>小型行李</span>
-            <div className="counter-controls">
-              <button 
-                type="button"
-                onClick={() => handleBaggageChange('bagSize', 'decrease')}
-                className="counter-button"
-                disabled={searchParams.bagSize === '0'}
-              >
-                -
-              </button>
-              <span className="count-display">{searchParams.bagSize}</span>
-              <button 
-                type="button"
-                onClick={() => handleBaggageChange('bagSize', 'increase')}
-                className="counter-button"
-                disabled={searchParams.bagSize === '5'}
-              >
-                +
-              </button>
+          <label>行李數量</label>
+          <div className="baggage-inputs">
+            <div className="baggage-counter">
+              <span>小型行李</span>
+              <div className="counter-controls">
+                <button 
+                  type="button"
+                  onClick={() => handleBaggageChange('bagSize', 'decrease')}
+                  className="counter-button"
+                  disabled={searchParams.bagSize === '0'}
+                >
+                  -
+                </button>
+                <span className="count-display">{searchParams.bagSize}</span>
+                <button 
+                  type="button"
+                  onClick={() => handleBaggageChange('bagSize', 'increase')}
+                  className="counter-button"
+                  disabled={searchParams.bagSize === '5'}
+                >
+                  +
+                </button>
+              </div>
             </div>
-          </div>
-          <div className="baggage-counter">
-            <span>大型行李</span>
-            <div className="counter-controls">
-              <button 
-                type="button"
-                onClick={() => handleBaggageChange('suitcaseSize', 'decrease')}
-                className="counter-button"
-                disabled={searchParams.suitcaseSize === '0'}
-              >
-                -
-              </button>
-              <span className="count-display">{searchParams.suitcaseSize}</span>
-              <button 
-                type="button"
-                onClick={() => handleBaggageChange('suitcaseSize', 'increase')}
-                className="counter-button"
-                disabled={searchParams.suitcaseSize === '5'}
-              >
-                +
-              </button>
+            <div className="baggage-counter">
+              <span>大型行李</span>
+              <div className="counter-controls">
+                <button 
+                  type="button"
+                  onClick={() => handleBaggageChange('suitcaseSize', 'decrease')}
+                  className="counter-button"
+                  disabled={searchParams.suitcaseSize === '0'}
+                >
+                  -
+                </button>
+                <span className="count-display">{searchParams.suitcaseSize}</span>
+                <button 
+                  type="button"
+                  onClick={() => handleBaggageChange('suitcaseSize', 'increase')}
+                  className="counter-button"
+                  disabled={searchParams.suitcaseSize === '5'}
+                >
+                  +
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
         {error && <div className="error-message">{error}</div>}
 
         <div className="button-group">
-          <button onClick={handleSearchClick} disabled={loading} className="search-button">
-            {loading ? '搜尋中...' : '搜尋'}
+          <button 
+            onClick={handleSearchClick} 
+            disabled={loading} 
+            className="search-button"
+          >
+            {loading ? (
+              <>
+                <span className="spinner"></span> 搜尋中...
+              </>
+            ) : '搜尋'}
           </button>
           <button onClick={handleReset} className="reset-button">
             重設
@@ -287,6 +332,7 @@ const Locker = () => {
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="details-link"
+                onClick={(e) => handleLinkClick(e, item.link)}
               >
                 前往預約 →
               </a>
