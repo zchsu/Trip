@@ -78,7 +78,7 @@ const Locker = () => {
         per_page: 5
       };
   
-      const response = await fetch('http://localhost:5000/search-lockers', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/search-lockers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

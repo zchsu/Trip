@@ -53,7 +53,7 @@ const Trip = () => {
   const fetchTrips = async () => {
     try {
       // 獲取用戶創建的行程
-      const createdResponse = await fetch(`http://localhost:5000/trip/${userId}`);
+      const createdResponse = await fetch(`${process.env.REACT_APP_API_URL}/trip/${userId}`);
       let createdTrips = await createdResponse.json();
       
       if (Array.isArray(createdTrips) && Array.isArray(createdTrips[0])) {
@@ -61,7 +61,7 @@ const Trip = () => {
       }
   
       // 獲取用戶接受邀請的行程
-      const acceptedResponse = await fetch(`http://localhost:5000/trip/accepted/${userId}`);
+      const acceptedResponse = await fetch(`${process.env.REACT_APP_API_URL}/trip/accepted/${userId}`);
       const acceptedTrips = await acceptedResponse.json();
   
       // 合併兩種行程並設置標記
@@ -81,7 +81,7 @@ const Trip = () => {
   const handleDelete = async (tripId) => {
     if (!window.confirm("確定要刪除這個行程嗎？")) return;
     try {
-      await fetch(`http://localhost:5000/trip/${tripId}`, { method: "DELETE" });
+      await fetch(`${process.env.REACT_APP_API_URL}/trip/${tripId}`, { method: "DELETE" });
       fetchTrips();
     } catch (error) {
       console.error("刪除行程失敗:", error);
@@ -109,7 +109,7 @@ const Trip = () => {
   const handleAddDetail = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:5000/trip_detail", {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/trip_detail`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -135,7 +135,7 @@ const Trip = () => {
   const handleDeleteDetail = async (detailId) => {
     if (!window.confirm("確定要刪除這個行程細節嗎？")) return;
     try {
-      const response = await fetch(`http://localhost:5000/trip_detail/${detailId}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/trip_detail/${detailId}`, {
         method: "DELETE"
       });
       if (response.ok) {
@@ -149,7 +149,7 @@ const Trip = () => {
   const handleAddTrip = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:5000/trip", {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/trip`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...tripData, user_id: userId }),
@@ -178,7 +178,7 @@ const Trip = () => {
     
     // 獲取當前參與者
     try {
-      const response = await fetch(`http://localhost:5000/trip/participants/${trip.trip_id}`);
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/trip/participants/${trip.trip_id}`);
       const data = await response.json();
       setEditParticipants(data.map(p => p.user_id));
     } catch (error) {
@@ -194,7 +194,7 @@ const Trip = () => {
   
     try {
       // 更新行程基本資訊
-      const response = await fetch(`http://localhost:5000/trip/${currentTrip}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/trip/${currentTrip}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(tripData),
@@ -212,7 +212,7 @@ const Trip = () => {
         !currentParticipants.some(p => p.user_id === id)
       );
   
-      const participantsResponse = await fetch(`http://localhost:5000/trip/participants/${currentTrip}`, {
+      const participantsResponse = await fetch(`${process.env.REACT_APP_API_URL}/trip/participants/${currentTrip}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ participant_ids: participantsToUpdate }),
@@ -248,7 +248,7 @@ const Trip = () => {
 
   const fetchTripDetails = async (tripId) => {
     try {
-      const response = await fetch(`http://localhost:5000/trip_detail/${tripId}`);
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/trip_detail/${tripId}`);
       const data = await response.json();
       setTripDetails(data);
       setSelectedTripId(tripId);
@@ -276,7 +276,7 @@ const Trip = () => {
   const handleEditDetail = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`http://localhost:5000/trip_detail/${currentDetail}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/trip_detail/${currentDetail}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(detailData),
@@ -298,7 +298,7 @@ const Trip = () => {
   // 新增取得好友列表的函數
   const fetchFriends = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/friends/${userId}`);
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/friends/${userId}`);
       const data = await response.json();
       setFriends(data);
     } catch (error) {
@@ -309,7 +309,7 @@ const Trip = () => {
   // 新增邀請好友的函數
   const inviteFriend = async (friendId) => {
     try {
-      const response = await fetch("http://localhost:5000/trip/invite", {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/trip/invite`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -332,7 +332,7 @@ const Trip = () => {
   // 新增獲取待處理好友請求的函數
 const fetchPendingFriends = async () => {
   try {
-    const response = await fetch(`http://localhost:5000/friendship/pending/${userId}`);
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/friendship/pending/${userId}`);
     const data = await response.json();
     setPendingFriends(data);
   } catch (error) {
@@ -343,7 +343,7 @@ const fetchPendingFriends = async () => {
 // 新增處理好友請求的函數
 const handleFriendRequest = async (friendshipId, status) => {
   try {
-    const response = await fetch(`http://localhost:5000/friendship/${friendshipId}`, {
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/friendship/${friendshipId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status })
@@ -362,7 +362,7 @@ const handleFriendRequest = async (friendshipId, status) => {
 // 新增獲取行程參與者的函數
 const fetchParticipants = async (tripId) => {
   try {
-    const response = await fetch(`http://localhost:5000/trip/participants/${tripId}`);
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/trip/participants/${tripId}`);
     const data = await response.json();
     setParticipants(data);
   } catch (error) {
@@ -373,7 +373,7 @@ const fetchParticipants = async (tripId) => {
 // 新增獲取待處理行程邀請的函數
 const fetchPendingInvitations = async () => {
   try {
-    const response = await fetch(`http://localhost:5000/trip/invitations/${userId}`);
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/trip/invitations/${userId}`);
     const data = await response.json();
     setPendingInvitations(data);
   } catch (error) {
@@ -384,7 +384,7 @@ const fetchPendingInvitations = async () => {
 // 新增處理行程邀請的函數
 const handleInvitation = async (tripId, status) => {
   try {
-    const response = await fetch(`http://localhost:5000/trip/invitation/${tripId}/${userId}`, {
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/trip/invitation/${tripId}/${userId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status })

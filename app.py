@@ -20,7 +20,14 @@ import threading
 import time
 
 app = Flask(__name__)
-CORS(app)  # <-- 允許前端請求後端
+CORS(app, resources={
+    r"/*": {
+        "origins": "*",  # 允許所有來源
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # 允許的 HTTP 方法
+        "allow_headers": ["Content-Type", "Authorization", "Access-Control-Allow-Origin"],
+        "supports_credentials": True  # 允許攜帶認證資訊
+    }
+})
 
 bcrypt = Bcrypt(app)
 
@@ -961,7 +968,7 @@ def search_lockers():
 if __name__ == "__main__":
     # 直接初始化 WebDriver 池
     init_driver_pool()
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5000, host='172.26.11.72')
 else:
     # 生產環境中（如 WSGI）初始化 WebDriver 池
     init_thread = threading.Thread(target=init_driver_pool)

@@ -31,7 +31,7 @@ const HomePage = () => {
     if (!searchUsername.trim()) return;
     
     try {
-      const response = await fetch(`http://localhost:5000/users/search?username=${searchUsername}`);
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/users/search?username=${searchUsername}`);
       const data = await response.json();
       setSearchResults(data.filter(user => user.user_id !== userId));
     } catch (error) {
@@ -42,7 +42,7 @@ const HomePage = () => {
   // 新增發送好友請求的函數
   const sendFriendRequest = async (friendId) => {
     try {
-      const response = await fetch("http://localhost:5000/friendship", {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/friendship`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -65,11 +65,30 @@ const HomePage = () => {
   };
 
   return (
+    <>
+    <header className="header">
+      <div className="header-content">
+        <a href="/" className="logo">TripMate</a>
+        <div className="header-right">
+          {username ? (
+            <>
+              <span className="welcome-text">Hi 旅行者, {username} !</span>
+              <button onClick={handleLogout} className="logout-button">登出</button>
+            </>
+          ) : (
+            <div className="auth-buttons">
+              <button onClick={() => navigate("/login")}>登入</button>
+              <button onClick={() => navigate("/register")}>註冊</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
+
     <div className="home-container">
       <div className="welcome-section">
         <h1>歡迎來到 TripMate</h1>
         <h2>這是一個讓旅伴配對的系統</h2>
-        <p>{username ? `Hi 旅行者, ${username} !` : "請登入或註冊"}</p>
       </div>
 
       {username && (
@@ -103,21 +122,37 @@ const HomePage = () => {
         </div>
       )}
 
-      <div className="auth-buttons">
-        {username ? (
+    <div className="action-buttons">
+        {username && (
           <>
-            <button onClick={handleLogout}>登出</button>
             <button onClick={() => navigate("/trip")}>管理行程</button>
             <button onClick={() => navigate("/match")} className="match-button">尋找旅伴</button>
-          </>
-        ) : (
-          <>
-            <button onClick={() => navigate("/login")}>登入</button>
-            <button onClick={() => navigate("/register")}>註冊</button>
           </>
         )}
       </div>
     </div>
+
+    <footer className="footer">
+      <div className="footer-content">
+        <div className="footer-section">
+          <h3>關於我們</h3>
+          <ul className="footer-links">
+            <li><a href="#">關於 TripMate</a></li>
+            <li><a href="#">使用條款</a></li>
+            <li><a href="#">隱私政策</a></li>
+          </ul>
+        </div>
+        <div className="footer-section">
+          <h3>聯絡資訊</h3>
+          <ul className="footer-links">
+            <li><a href="#">客服中心</a></li>
+            <li><a href="#">意見回饋</a></li>
+            <li><a href="#">合作提案</a></li>
+          </ul>
+        </div>
+      </div>
+    </footer>
+  </>
   );
 };
 

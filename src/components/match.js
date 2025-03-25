@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { GoogleMap, LoadScript, Marker, Polyline } from '@react-google-maps/api';
 import "../styles/match.css";
 
 const Match = () => {
@@ -11,11 +12,13 @@ const Match = () => {
     const [showTripDetails, setShowTripDetails] = useState(null);
     const [tripDetails, setTripDetails] = useState([]);
     const [allTrips, setAllTrips] = useState([]); 
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(6);
 
     // 新增獲取所有行程的函數
     const fetchAllTrips = async () => {
         try {
-          const response = await fetch('http://localhost:5000/trip/all');
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/trip/all`);
           const data = await response.json();
           setAllTrips(data);
           setMatchedTrips(data); // 初始顯示所有行程
@@ -48,7 +51,7 @@ const Match = () => {
     // 獲取用戶的所有行程
     const fetchUserTrips = async () => {
         try {
-          const response = await fetch(`http://localhost:5000/trip/${userId}`);
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/trip/${userId}`);
           const data = await response.json();
           // 按照開始日期排序
           const sortedTrips = data.sort((a, b) => 
@@ -69,7 +72,7 @@ const Match = () => {
         }
         
         try {
-          const response = await fetch(`http://localhost:5000/trip/match/${tripId}`);
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/trip/match/${tripId}`);
           const data = await response.json();
           
           // 取得選擇的行程資訊
@@ -130,8 +133,13 @@ const Match = () => {
             return matchesFilters;
           });
     
-          setMatchedTrips(filteredData);
-          setSelectedTrip(selectedTripInfo);
+          // 在設置 matchedTrips 之前先排序
+          const sortedData = filteredData.sort((a, b) => 
+            (b.overlapping_days || 0) - (a.overlapping_days || 0)
+          );
+
+          setMatchedTrips(sortedData);
+          setCurrentPage(1); // 重置到第一頁
           if (!selectedTrip) {
             setSelectedTrip(selectedTripInfo);
           }
@@ -142,7 +150,7 @@ const Match = () => {
 
   const handleJoinRequest = async (tripId) => {
     try {
-      const response = await fetch(`http://localhost:5000/trip/join`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/trip/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -166,7 +174,7 @@ const Match = () => {
   // 新增獲取行程細節的函數
   const fetchTripDetails = async (tripId) => {
     try {
-      const response = await fetch(`http://localhost:5000/trip_detail/${tripId}`);
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/trip_detail/${tripId}`);
       const data = await response.json();
       setTripDetails(data);
     } catch (error) {
@@ -228,7 +236,12 @@ const Match = () => {
              matchesBudget && matchesTags && matchesDates;
     });
   
-    setMatchedTrips(filteredData);
+    const sortedData = filteredData.sort((a, b) => 
+      (b.overlapping_days || 0) - (a.overlapping_days || 0)
+    );
+
+    setMatchedTrips(sortedData);
+    setCurrentPage(1); // 重置到第一頁
   };
 
   // 修改搜尋函數
@@ -259,13 +272,23 @@ const Match = () => {
       findMatches(selectedTrip.trip_id);
     } else {
       setMatchedTrips(allTrips); // 重設時顯示所有行程
+      setCurrentPage(1); // 重置到第一頁
     }
   };
 
+  // 計算當前頁面要顯示的資料
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = matchedTrips.slice(indexOfFirstItem, indexOfLastItem);
+
+  // 處理頁面變更
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
   // 修改匹配行程列表的顯示部分
   const renderMatchedTrips = () => (
+    <>
     <ul className="matches-list">
-      {matchedTrips.map(trip => (
+      {currentItems.map(trip => (
         <li key={trip.trip_id} className="match-card">
           <div className="trip-basic-info">
             <h3>{trip.title}</h3>
@@ -336,6 +359,39 @@ const Match = () => {
         </li>
       ))}
     </ul>
+    {/* 分頁控制 */}
+    {matchedTrips.length > itemsPerPage && (
+      <div className="pagination">
+        <button
+          onClick={() => paginate(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="page-button"
+        >
+          上一頁
+        </button>
+        
+        <div className="page-numbers">
+          {Array.from({ length: Math.ceil(matchedTrips.length / itemsPerPage) }).map((_, index) => (
+            <button
+              key={index + 1}
+              onClick={() => paginate(index + 1)}
+              className={`page-number ${currentPage === index + 1 ? 'active' : ''}`}
+            >
+              {index + 1}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => paginate(currentPage + 1)}
+          disabled={currentPage === Math.ceil(matchedTrips.length / itemsPerPage)}
+          className="page-button"
+        >
+          下一頁
+        </button>
+      </div>
+    )}
+    </>
   );
 
   return (
