@@ -14,6 +14,9 @@ const Match = () => {
     const [allTrips, setAllTrips] = useState([]); 
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(6);
+    const [selectedTripLocations, setSelectedTripLocations] = useState([]);
+    const [matchedTripLocations, setMatchedTripLocations] = useState([]);
+    const [mapCenter, setMapCenter] = useState({ lat: 35.6762, lng: 139.6503 }); // 預設東京
 
     // 新增獲取所有行程的函數
     const fetchAllTrips = async () => {
@@ -171,16 +174,66 @@ const Match = () => {
     }
   };
 
-  // 新增獲取行程細節的函數
-  const fetchTripDetails = async (tripId) => {
-    try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/trip_detail/${tripId}`);
-      const data = await response.json();
-      setTripDetails(data);
-    } catch (error) {
-      console.error("獲取行程細節失敗:", error);
-    }
+    // 添加地圖樣式
+  const mapContainerStyle = {
+    width: '100%',
+    height: '400px'
   };
+
+  // 修改 fetchTripDetails 函數
+const fetchTripDetails = async (tripId) => {
+  try {
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/trip_detail/${tripId}`);
+    const data = await response.json();
+    setTripDetails(data);
+
+    // 獲取地理編碼服務
+    const geocoder = new window.google.maps.Geocoder();
+    
+    // 處理匹配行程的位置
+    const matchedLocations = await Promise.all(
+      data
+        .filter(detail => {
+          const detailDate = new Date(detail.date);
+          const tripStartDate = new Date(selectedTrip.start_date);
+          const tripEndDate = new Date(selectedTrip.end_date);
+          return detailDate >= tripStartDate && detailDate <= tripEndDate;
+        })
+        .map(async detail => {
+          try {
+            const result = await new Promise((resolve, reject) => {
+              geocoder.geocode({ address: detail.location }, (results, status) => {
+                if (status === 'OK') {
+                  resolve({
+                    lat: results[0].geometry.location.lat(),
+                    lng: results[0].geometry.location.lng(),
+                    name: detail.location,
+                    date: detail.date,
+                    time: `${detail.start_time.slice(0, 5)} - ${detail.end_time.slice(0, 5)}`
+                  });
+                } else {
+                  reject(status);
+                }
+              });
+            });
+            return result;
+          } catch (error) {
+            console.error(`地理編碼錯誤: ${error}`);
+            return null;
+          }
+        })
+    );
+
+    setMatchedTripLocations(matchedLocations.filter(loc => loc !== null));
+
+    // 如果有位置，設置地圖中心
+    if (matchedLocations.length > 0) {
+      setMapCenter(matchedLocations[0]);
+    }
+  } catch (error) {
+    console.error("獲取行程細節失敗:", error);
+  }
+};
 
   // 處理篩選條件變更
   const handleFilterChange = (e) => {
@@ -318,44 +371,10 @@ const Match = () => {
 
           <button 
             className="details-button"
-            onClick={() => {
-              if (showTripDetails === trip.trip_id) {
-                setShowTripDetails(null);
-              } else {
-                setShowTripDetails(trip.trip_id);
-                fetchTripDetails(trip.trip_id);
-              }
-            }}
+            onClick={() => navigate(`/trip-detail/${trip.trip_id}`)}
           >
-            {showTripDetails === trip.trip_id ? '隱藏細節' : '查看細節'}
+            查看細節
           </button>
-
-          {showTripDetails === trip.trip_id && (
-            <div className="trip-details-section">
-              <h4>行程細節</h4>
-              {tripDetails.length === 0 ? (
-                <p>此行程暫無細節安排</p>
-              ) : (
-                <div className="details-list">
-                  {tripDetails
-                    .filter(detail => {
-                      const detailDate = new Date(detail.date);
-                      const tripStartDate = new Date(selectedTrip.start_date);
-                      const tripEndDate = new Date(selectedTrip.end_date);
-                      return detailDate >= tripStartDate && detailDate <= tripEndDate;
-                    })
-                    .map(detail => (
-                      <div key={detail.detail_id} className="detail-item">
-                        <p>📅 {new Date(detail.date).toLocaleDateString()}</p>
-                        <p>📍 {detail.location}</p>
-                        <p>⏰ {detail.start_time.slice(0, 5)} - {detail.end_time.slice(0, 5)}</p>
-                      </div>
-                    ))
-                  }
-                </div>
-              )}
-            </div>
-          )}
         </li>
       ))}
     </ul>
