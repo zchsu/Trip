@@ -998,6 +998,86 @@ def search_lockers():
     except Exception as e:
         print(f"API error: {e}")
         return jsonify({'error': str(e)}), 500
+    
+
+# LINE 用戶相關路由
+@app.route('/line/user', methods=['POST'])
+def create_line_user():
+    data = request.get_json()
+    line_user_id = data.get('userId')
+    display_name = data.get('displayName')
+    picture_url = data.get('pictureUrl')
+    email = data.get('email')
+
+    try:
+        cur = mysql.connection.cursor()
+        # 檢查用戶是否已存在
+        cur.execute("SELECT line_user_id FROM line_users WHERE line_user_id = %s", (line_user_id,))
+        existing_user = cur.fetchone()
+        
+        if not existing_user:
+            # 新增用戶
+            cur.execute("""
+                INSERT INTO line_users (line_user_id, display_name, picture_url, email)
+                VALUES (%s, %s, %s, %s)
+            """, (line_user_id, display_name, picture_url, email))
+            
+        mysql.connection.commit()
+        cur.close()
+        return jsonify({'message': 'User created/updated successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# LINE 行程相關路由
+@app.route('/line/trip', methods=['POST'])
+def add_line_trip():
+    data = request.get_json()
+    line_user_id = data.get('line_user_id')
+    
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            INSERT INTO line_trips 
+            (line_user_id, title, description, start_date, end_date, area, tags, budget, preferred_gender)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            line_user_id,
+            data.get('title'),
+            data.get('description'),
+            data.get('start_date'),
+            data.get('end_date'),
+            data.get('area'),
+            data.get('tags'),
+            data.get('budget'),
+            data.get('preferred_gender', 'any')
+        ))
+        
+        trip_id = cur.lastrowid
+        mysql.connection.commit()
+        cur.close()
+        return jsonify({'message': '行程新增成功', 'trip_id': trip_id}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# 獲取 LINE 用戶的行程
+@app.route('/line/trip/<line_user_id>', methods=['GET'])
+def get_line_trips(line_user_id):
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            SELECT * FROM line_trips 
+            WHERE line_user_id = %s 
+            ORDER BY start_date ASC
+        """, (line_user_id,))
+        
+        trips = cur.fetchall()
+        columns = [desc[0] for desc in cur.description]
+        result = [dict(zip(columns, trip)) for trip in trips]
+        
+        cur.close()
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # 在更新版本的 Flask 中使用 with_app_context
 if __name__ == "__main__":
