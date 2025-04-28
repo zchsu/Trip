@@ -14,6 +14,8 @@ const TripDetail = () => {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [zoom, setZoom] = useState(12);
   const [selectedLocation, setSelectedLocation] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchLocation, setSearchLocation] = useState(null);
 
   const mapContainerStyle = {
     width: '100%',
@@ -134,6 +136,32 @@ const handleLocationClick = useCallback((location) => {
     setSelectedLocation(location);
   }, []);
 
+  // 新增搜尋處理函數
+const handleSearch = useCallback(() => {
+    if (!window.google || !searchQuery) return;
+  
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ 
+      address: searchQuery,
+      region: 'JP' // 限制在日本範圍內搜尋
+    }, (results, status) => {
+      if (status === 'OK' && results && results[0]) {
+        const location = {
+          lat: results[0].geometry.location.lat(),
+          lng: results[0].geometry.location.lng(),
+          name: searchQuery,
+          isSearchResult: true
+        };
+        setSearchLocation(location);
+        setMapCenter(location);
+        setZoom(15);
+      } else {
+        console.warn('搜尋位置失敗:', status);
+        setSearchLocation(null);
+      }
+    });
+  }, [searchQuery]);
+
   return (
   <div className="trip-detail-container">
     <div className="header-section">
@@ -179,6 +207,18 @@ const handleLocationClick = useCallback((location) => {
       </div>
 
       <div className="right-content">
+        <div className="search-container">
+            <div className="search-box">
+            <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="搜尋景點..."
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            />
+            <button onClick={handleSearch}>搜尋</button>
+            </div>
+        </div>
         <LoadScript 
           googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}
           onLoad={handleScriptLoad}
@@ -209,6 +249,21 @@ const handleLocationClick = useCallback((location) => {
                 />
               ))}
               
+              {/* 顯示搜尋結果標記 */}
+                {searchLocation && (
+                <Marker
+                    position={{ lat: searchLocation.lat, lng: searchLocation.lng }}
+                    title={searchLocation.name}
+                    icon={{
+                    path: window.google.maps.SymbolPath.CIRCLE,
+                    fillColor: '#FF0000',
+                    fillOpacity: 1,
+                    strokeWeight: 1,
+                    scale: 8
+                    }}
+                />
+                )}
+
               {matchedTripLocations.length > 1 && (
                 <Polyline
                   path={matchedTripLocations}

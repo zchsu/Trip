@@ -3,6 +3,7 @@ from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from flask_mysqldb import MySQL
 from flask_cors import CORS  # <-- 新增這行
+import os  # Import os module for environment variables
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -18,6 +19,11 @@ from webdriver_manager.chrome import ChromeDriverManager
 import json
 import threading
 import time
+
+# 載入 LINE Message API 相關函式庫
+from linebot import LineBotApi, WebhookHandler
+from linebot.exceptions import InvalidSignatureError
+from linebot.models import MessageEvent, TextMessage, TextSendMessage
 
 app = Flask(__name__)
 CORS(app, resources={
@@ -41,6 +47,35 @@ mysql = MySQL(app)
 # 配置 JWT
 app.config['JWT_SECRET_KEY'] = 'your_jwt_secret_key'
 jwt = JWTManager(app)
+
+@app.route("/", methods=['GET'])
+def index():
+    return "Line Bot Server is running!"
+
+@app.route("/", methods=['POST'])
+def linebot():
+    body = request.get_data(as_text=True)                    # 取得收到的訊息內容
+    try:
+        json_data = json.loads(body)                         # json 格式化訊息內容
+        access_token = os.getenv('LINE_BOT_ACCESS_TOKEN')
+        secret = os.getenv('LINE_BOT_SECRET')
+        line_bot_api = LineBotApi(access_token)              # 確認 token 是否正確
+        handler = WebhookHandler(secret)                     # 確認 secret 是否正確
+        signature = request.headers['X-Line-Signature']      # 加入回傳的 headers
+        handler.handle(body, signature)                      # 綁定訊息回傳的相關資訊
+        tk = json_data['events'][0]['replyToken']            # 取得回傳訊息的 Token
+        type = json_data['events'][0]['message']['type']     # 取得 LINe 收到的訊息類型
+        if type=='text':
+            msg = json_data['events'][0]['message']['text']  # 取得 LINE 收到的文字訊息
+            print(msg)                                       # 印出內容
+            reply = msg
+        else:
+            reply = '你傳的不是文字呦～'
+        print(reply)
+        line_bot_api.reply_message(tk,TextSendMessage(reply))# 回傳訊息
+    except:
+        print(body)                                          # 如果發生錯誤，印出收到的內容
+    return 'OK'                                              # 驗證 Webhook 使用，不能省略
 
 # 註冊
 @app.route('/register', methods=['POST'])
@@ -968,7 +1003,7 @@ def search_lockers():
 if __name__ == "__main__":
     # 直接初始化 WebDriver 池
     init_driver_pool()
-    app.run(debug=True, port=5000, host='172.26.11.72')
+    app.run(debug=True, host='0.0.0.0', port=5000)
 else:
     # 生產環境中（如 WSGI）初始化 WebDriver 池
     init_thread = threading.Thread(target=init_driver_pool)
