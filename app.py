@@ -26,14 +26,37 @@ from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 
 app = Flask(__name__)
+# 修改 CORS 設定
 CORS(app, resources={
     r"/*": {
-        "origins": "*",  # 允許所有來源
-        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # 允許的 HTTP 方法
-        "allow_headers": ["Content-Type", "Authorization", "Access-Control-Allow-Origin"],
-        "supports_credentials": True  # 允許攜帶認證資訊
+        "origins": "*",
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": [
+            "Content-Type", 
+            "Authorization", 
+            "Access-Control-Allow-Origin",
+            "ngrok-skip-browser-warning"
+        ],
+        "expose_headers": ["Content-Range", "X-Content-Range"]
     }
 })
+
+# 添加全局回應標頭處理
+@app.after_request
+def after_request(response):
+    # 確保安全標頭正確設定
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization,ngrok-skip-browser-warning'
+    
+    # 針對 JavaScript 文件的處理
+    if '.js' in request.path:
+        response.headers['Content-Type'] = 'application/javascript; charset=utf-8'
+    
+    # 移除可能導致問題的標頭
+    response.headers.pop('X-Content-Type-Options', None)
+    
+    return response
 
 bcrypt = Bcrypt(app)
 
@@ -1078,6 +1101,118 @@ def get_line_trips(line_user_id):
         return jsonify(result), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+    # LINE 行程細節相關路由
+@app.route('/line/trip_detail', methods=['POST'])
+def add_line_trip_detail():
+    data = request.get_json()
+    trip_id = data.get('trip_id')
+    location = data.get('location')
+    date = data.get('date')
+    start_time = data.get('start_time')
+    end_time = data.get('end_time')
+
+    if not all([trip_id, location, date, start_time, end_time]):
+        return jsonify({'error': '缺少必要欄位'}), 400
+
+    try:
+        cur = mysql.connection.cursor()
+        
+        # 檢查行程是否存在
+        cur.execute("SELECT start_date, end_date FROM line_trips WHERE trip_id = %s", (trip_id,))
+        trip = cur.fetchone()
+        if not trip:
+            return jsonify({'error': '找不到對應的行程'}), 404
+            
+        # 檢查日期是否在行程範圍內
+        detail_date = datetime.strptime(date, '%Y-%m-%d').date()
+        trip_start = trip[0]
+        trip_end = trip[1]
+        
+        if detail_date < trip_start or detail_date > trip_end:
+            return jsonify({
+                'error': '行程細節的日期必須在行程的日期範圍內',
+                'valid_range': {
+                    'start_date': trip_start.strftime('%Y-%m-%d'),
+                    'end_date': trip_end.strftime('%Y-%m-%d')
+                }
+            }), 400
+
+        # 新增行程細節
+        cur.execute("""
+            INSERT INTO line_trip_details 
+            (trip_id, location, date, start_time, end_time)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (trip_id, location, date, start_time, end_time))
+        
+        detail_id = cur.lastrowid
+        mysql.connection.commit()
+        cur.close()
+        
+        return jsonify({
+            'message': '行程細節新增成功',
+            'detail_id': detail_id
+        }), 201
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/line/trip_detail/<int:trip_id>', methods=['GET'])
+def get_line_trip_details(trip_id):
+    try:
+        cur = mysql.connection.cursor()
+        
+        # 先檢查行程是否存在
+        cur.execute("SELECT trip_id FROM line_trips WHERE trip_id = %s", (trip_id,))
+        if not cur.fetchone():
+            return jsonify({'error': '找不到該行程'}), 404
+            
+        # 獲取行程細節
+        cur.execute("""
+            SELECT detail_id, trip_id, location, 
+                   DATE_FORMAT(date, '%%Y-%%m-%%d') as date,
+                   TIME_FORMAT(start_time, '%%H:%%i') as start_time,
+                   TIME_FORMAT(end_time, '%%H:%%i') as end_time
+            FROM line_trip_details 
+            WHERE trip_id = %s 
+            ORDER BY date ASC, start_time ASC
+        """, (trip_id,))
+        
+        details = cur.fetchall()
+        
+        if not details:
+            return jsonify([]), 200  # 返回空陣列而不是 None
+            
+        columns = [desc[0] for desc in cur.description]
+        result = [dict(zip(columns, detail)) for detail in details]
+        
+        cur.close()
+        return jsonify(result), 200
+        
+    except Exception as e:
+        print(f"獲取行程細節時發生錯誤: {str(e)}")  # 添加日誌
+        return jsonify({'error': '獲取行程細節時發生錯誤'}), 500
+    finally:
+        try:
+            if cur:
+                cur.close()
+        except:
+            pass
+
+@app.route('/line/trip_detail/<int:detail_id>', methods=['DELETE'])
+def delete_line_trip_detail(detail_id):
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("DELETE FROM line_trip_details WHERE detail_id = %s", (detail_id,))
+        mysql.connection.commit()
+        cur.close()
+        return jsonify({'message': '行程細節刪除成功'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/<path:path>', methods=['GET'])
+def catch_all(path):
+    return app.send_static_file('index.html')
 
 # 在更新版本的 Flask 中使用 with_app_context
 if __name__ == "__main__":

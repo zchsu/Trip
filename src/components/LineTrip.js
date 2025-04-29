@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import liff from '@line/liff';
-import "../styles/trip.css";
+import "../styles/LineTrip.css";
 
 const LineTrip = () => {
   const navigate = useNavigate();
@@ -67,10 +67,27 @@ const LineTrip = () => {
     }
   };
 
+  const customFetch = async (url, options = {}) => {
+    const defaultHeaders = {
+      'ngrok-skip-browser-warning': 'true',
+      'Content-Type': 'application/json',
+    };
+  
+    const mergedOptions = {
+      ...options,
+      headers: {
+        ...defaultHeaders,
+        ...(options.headers || {}),
+      },
+    };
+  
+    return fetch(url, mergedOptions);
+  };
+
   const saveUserProfile = async (profile) => {
     try {
       console.log("儲存用戶資料...");
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/line/user`, {
+      const response = await customFetch(`${process.env.REACT_APP_API_URL}/line/user`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json'
@@ -92,7 +109,7 @@ const LineTrip = () => {
   const fetchTrips = async (userId) => {
     try {
       console.log("獲取行程資料...");
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/line/trip/${userId}`);
+      const response = await customFetch(`${process.env.REACT_APP_API_URL}/line/trip/${userId}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -108,7 +125,7 @@ const LineTrip = () => {
   const handleAddTrip = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/line/trip`, {
+      const response = await customFetch(`${process.env.REACT_APP_API_URL}/line/trip`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -141,7 +158,7 @@ const LineTrip = () => {
   const handleDeleteTrip = async (tripId) => {
     if (window.confirm('確定要刪除此行程嗎？')) {
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/line/trip/${tripId}`, {
+        const response = await customFetch(`${process.env.REACT_APP_API_URL}/line/trip/${tripId}`, {
           method: 'DELETE'
         });
 
@@ -158,19 +175,35 @@ const LineTrip = () => {
 
   const fetchTripDetails = async (tripId) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/line/trip_detail/${tripId}`);
+      console.log("正在獲取行程細節...");
+      const response = await customFetch(`${process.env.REACT_APP_API_URL}/line/trip_detail/${tripId}`, {
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
-      setTripDetails(data);
+      console.log("行程細節資料:", data);
+      
+      setTripDetails(Array.isArray(data) ? data : []);
+      
     } catch (e) {
       console.error('獲取行程細節失敗:', e);
-      alert('獲取行程細節失敗，請稍後再試');
+      setTripDetails([]); 
+      setError(`獲取行程細節失敗: ${e.message}`);
     }
   };
 
   const handleAddDetail = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/line/trip_detail`, {
+      const response = await customFetch(`${process.env.REACT_APP_API_URL}/line/trip_detail`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -194,6 +227,15 @@ const LineTrip = () => {
       console.error('新增行程細節失敗:', e);
       alert('新增行程細節失敗，請稍後再試');
     }
+  };
+
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'short', 
+      month: 'short', 
+      day: 'numeric' 
+    });
   };
 
   // 渲染載入中狀態
@@ -228,7 +270,9 @@ const LineTrip = () => {
           <h3>{trip.title}</h3>
           <p>{trip.description}</p>
           <div className="trip-info">
-            <span>{trip.start_date} - {trip.end_date}</span>
+            <span>
+                {formatDate(trip.start_date)} - {formatDate(trip.end_date)}
+            </span>
             <span>{trip.area}</span>
           </div>
           <div className="trip-actions">
@@ -370,13 +414,17 @@ const LineTrip = () => {
               </form>
             )}
             <div className="details-list">
-              {tripDetails.map((detail) => (
+            {Array.isArray(tripDetails) && tripDetails.length > 0 ? (
+                tripDetails.map((detail) => (
                 <div key={detail.detail_id} className="detail-card">
-                  <p>地點：{detail.location}</p>
-                  <p>日期：{detail.date}</p>
-                  <p>時間：{detail.start_time} - {detail.end_time}</p>
+                    <p>地點：{detail.location}</p>
+                    <p>日期：{detail.date}</p>
+                    <p>時間：{detail.start_time} - {detail.end_time}</p>
                 </div>
-              ))}
+                ))
+            ) : (
+                <p className="no-details">尚未新增行程細節</p>
+            )}
             </div>
           </div>
         </div>

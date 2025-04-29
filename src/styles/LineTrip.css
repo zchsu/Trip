@@ -1,0 +1,329 @@
+/* 基本容器樣式 */
+.trip-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  /* 用戶資料區塊 */
+  .user-profile {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+  }
+  
+  .profile-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  
+  .user-profile h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #333;
+  }
+  
+  /* 行程列表 */
+  .trips-list {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+  
+  .add-button {
+    width: 100%;
+    padding: 12px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-bottom: 20px;
+    transition: background 0.3s ease;
+  }
+  
+  .add-button:hover {
+    background: #45a049;
+  }
+  
+  /* 行程卡片 */
+  .trip-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .trip-card h3 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 1.2rem;
+  }
+  
+  .trip-card p {
+    margin: 0 0 15px 0;
+    color: #666;
+    font-size: 0.9rem;
+  }
+  
+  .trip-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+    color: #666;
+  }
+  
+  .trip-actions {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .trip-actions button {
+    flex: 1;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.3s ease;
+  }
+  
+  .trip-actions button:first-child {
+    background: #ff4444;
+    color: white;
+  }
+  
+  .trip-actions button:last-child {
+    background: #2196F3;
+    color: white;
+  }
+  
+  /* 表單樣式 */
+  .trip-form {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #333;
+    font-weight: 500;
+  }
+  
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+  }
+  
+  .form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+  }
+  
+  /* 行程細節彈窗 */
+  .trip-details.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  
+  .detail-content {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  
+  .detail-card {
+    background: #f5f5f5;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+  }
+  
+  /* 載入和錯誤狀態 */
+  .loading-container,
+  .error-container {
+    text-align: center;
+    padding: 20px;
+  }
+  
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* 手機版 RWD (最大 767px) */
+  @media screen and (max-width: 767px) {
+    .trip-container {
+      padding: 10px;
+    }
+  
+    .user-profile {
+      padding: 10px;
+    }
+  
+    .profile-image {
+      width: 32px;
+      height: 32px;
+    }
+  
+    .user-profile h2 {
+      font-size: 1rem;
+    }
+  
+    .trips-list {
+      grid-template-columns: 1fr;
+    }
+  
+    .trip-card {
+      padding: 15px;
+    }
+  
+    .trip-actions {
+      flex-direction: column;
+    }
+  
+    .trip-actions button {
+      width: 100%;
+    }
+  
+    .detail-content {
+      width: 95%;
+      padding: 15px;
+    }
+  
+    .form-group input,
+    .form-group textarea {
+      font-size: 16px;
+    }
+  
+    .button-group {
+      flex-direction: column;
+      gap: 10px;
+    }
+  
+    .button-group button {
+      width: 100%;
+    }
+  }
+  
+  /* 平板版 RWD (768px - 1023px) */
+  @media screen and (min-width: 768px) and (max-width: 1023px) {
+    .trips-list {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  
+    .detail-content {
+      width: 80%;
+    }
+  }
+  
+  /* 按鈕基本樣式 */
+  .button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  
+  .button-group button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s ease;
+  }
+  
+  .button-group button[type="submit"] {
+    background: #4CAF50;
+    color: white;
+  }
+  
+  .button-group button[type="button"] {
+    background: #f44336;
+    color: white;
+  }
+  
+  /* 深色模式支援 */
+  @media (prefers-color-scheme: dark) {
+    .trip-container {
+      background: #1a1a1a;
+      color: #fff;
+    }
+  
+    .trip-card,
+    .trip-form,
+    .detail-content,
+    .user-profile {
+      background: #2d2d2d;
+      color: #fff;
+    }
+  
+    .form-group input,
+    .form-group textarea {
+      background: #3d3d3d;
+      color: #fff;
+      border-color: #4d4d4d;
+    }
+  
+    .trip-card h3 {
+      color: #fff;
+    }
+  
+    .trip-card p,
+    .trip-info {
+      color: #ccc;
+    }
+  }
+  
+  /* 輔助功能支援 */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
