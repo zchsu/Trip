@@ -44,24 +44,47 @@ const LineTrip = () => {
       console.log("正在初始化 LIFF...");
       await liff.init({ 
         liffId: process.env.REACT_APP_LIFF_ID,
-        withLoginOnExternalBrowser: true
+        withLoginOnExternalBrowser: true  // 確保已設置為 true
       });
       console.log("LIFF 初始化成功");
 
-      if (liff.isLoggedIn()) {
-        console.log("用戶已登入");
-        const profile = await liff.getProfile();
-        console.log("用戶資料:", profile);
-        setUserProfile(profile);
-        await saveUserProfile(profile);
-        await fetchTrips(profile.userId);
-      } else {
+      // 增加更詳細的登入狀態檢查
+      if (!liff.isLoggedIn()) {
         console.log("用戶未登入，開始登入流程");
-        liff.login();
+        // 增加錯誤處理
+        try {
+          await liff.login();
+        } catch (loginError) {
+          console.error("登入失敗:", loginError);
+          setError(`登入失敗: ${loginError.message}`);
+          return;
+        }
       }
+
+      console.log("開始獲取用戶資料");
+      const profile = await liff.getProfile();
+      console.log("用戶資料:", profile);
+      setUserProfile(profile);
+      await saveUserProfile(profile);
+      await fetchTrips(profile.userId);
+
     } catch (e) {
       console.error("LIFF 初始化失敗:", e);
-      setError(`LIFF 初始化失敗: ${e.message}`);
+      // 增加更詳細的錯誤訊息
+      const errorMessage = e.message || '未知錯誤';
+      const errorCode = e.code || 'NO_CODE';
+      setError(`LIFF 初始化失敗 (${errorCode}): ${errorMessage}`);
+      
+      // 如果是在手機上，可以嘗試重新導向到 LINE 內開啟
+      if (liff.isInClient()) {
+        console.log("在 LINE 內瀏覽器中");
+      } else {
+        console.log("在外部瀏覽器中");
+        // 可以考慮添加重試機制
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
+      }
     } finally {
       setIsLoading(false);
     }

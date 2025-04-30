@@ -23,7 +23,7 @@ function App() {
         <Route path="/match" element={<Match />} />
         <Route path="/locker" element={<Locker />} />
         <Route path="/trip-detail/:tripId" element={<TripDetail />} />
-        <Route path="/line/trip" element={<LineTrip />} />
+        <Route path="/linetrip" element={<LineTrip />} />
       </Routes>
     </Router>
   );

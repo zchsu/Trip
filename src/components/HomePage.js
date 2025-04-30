@@ -90,7 +90,7 @@ const HomePage = () => {
         <h1>歡迎來到 TripMate</h1>
         <h2>這是一個讓旅伴配對的系統</h2>
       </div>
-
+      <button onClick={() => navigate("/linetrip")}>test</button>
       {username && (
         <div className="search-section">
           <h3>搜尋旅伴</h3>
