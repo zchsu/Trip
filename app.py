@@ -1027,29 +1027,46 @@ def search_lockers():
 # LINE 用戶相關路由
 @app.route('/line/user', methods=['POST'])
 def create_line_user():
-    data = request.get_json()
-    line_user_id = data.get('userId')
-    display_name = data.get('displayName')
-    picture_url = data.get('pictureUrl')
-    email = data.get('email')
-
     try:
+        data = request.get_json()
+        if not data or 'userId' not in data:
+            return jsonify({'error': '缺少必要的 userId'}), 400
+
+        line_user_id = data.get('userId')
+        display_name = data.get('displayName')
+        picture_url = data.get('pictureUrl')
+
         cur = mysql.connection.cursor()
-        # 檢查用戶是否已存在
-        cur.execute("SELECT line_user_id FROM line_users WHERE line_user_id = %s", (line_user_id,))
-        existing_user = cur.fetchone()
-        
-        if not existing_user:
-            # 新增用戶
-            cur.execute("""
-                INSERT INTO line_users (line_user_id, display_name, picture_url, email)
-                VALUES (%s, %s, %s, %s)
-            """, (line_user_id, display_name, picture_url, email))
+        try:
+            # 檢查用戶是否已存在
+            cur.execute("SELECT line_user_id FROM line_users WHERE line_user_id = %s", (line_user_id,))
+            existing_user = cur.fetchone()
             
-        mysql.connection.commit()
-        cur.close()
-        return jsonify({'message': 'User created/updated successfully'}), 200
+            if not existing_user:
+                # 新增用戶
+                cur.execute("""
+                    INSERT INTO line_users (line_user_id, display_name, picture_url)
+                    VALUES (%s, %s, %s)
+                """, (line_user_id, display_name, picture_url))
+            else:
+                # 更新現有用戶資料
+                cur.execute("""
+                    UPDATE line_users 
+                    SET display_name = %s, picture_url = %s
+                    WHERE line_user_id = %s
+                """, (display_name, picture_url, line_user_id))
+                
+            mysql.connection.commit()
+            return jsonify({'message': 'User created/updated successfully'}), 200
+            
+        except Exception as db_error:
+            print(f"資料庫錯誤: {str(db_error)}")
+            return jsonify({'error': '資料庫操作失敗'}), 500
+        finally:
+            cur.close()
+            
     except Exception as e:
+        print(f"處理請求時發生錯誤: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 # LINE 行程相關路由
