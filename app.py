@@ -1217,16 +1217,59 @@ def get_line_trip_details(trip_id):
         except:
             pass
 
+# 刪除單一行程細節
 @app.route('/line/trip_detail/<int:detail_id>', methods=['DELETE'])
 def delete_line_trip_detail(detail_id):
     try:
         cur = mysql.connection.cursor()
+        # 先確認該細節是否存在
+        cur.execute("SELECT detail_id FROM line_trip_details WHERE detail_id = %s", (detail_id,))
+        if not cur.fetchone():
+            return jsonify({'error': '找不到該行程細節'}), 404
+            
         cur.execute("DELETE FROM line_trip_details WHERE detail_id = %s", (detail_id,))
         mysql.connection.commit()
         cur.close()
         return jsonify({'message': '行程細節刪除成功'}), 200
     except Exception as e:
+        print(f"刪除行程細節時發生錯誤: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+# 刪除整個行程及其細節
+@app.route('/line/trip/<int:trip_id>', methods=['DELETE'])
+def delete_line_trip(trip_id):
+    try:
+        cur = mysql.connection.cursor()
+        try:
+            # 開始事務
+            cur.execute("START TRANSACTION")
+            
+            # 先確認行程是否存在
+            cur.execute("SELECT trip_id FROM line_trips WHERE trip_id = %s", (trip_id,))
+            if not cur.fetchone():
+                return jsonify({'error': '找不到該行程'}), 404
+            
+            # 先刪除所有相關的行程細節
+            cur.execute("DELETE FROM line_trip_details WHERE trip_id = %s", (trip_id,))
+            
+            # 再刪除行程本身
+            cur.execute("DELETE FROM line_trips WHERE trip_id = %s", (trip_id,))
+            
+            # 提交事務
+            mysql.connection.commit()
+            return jsonify({'message': '行程及其細節已成功刪除'}), 200
+            
+        except Exception as db_error:
+            # 發生錯誤時回滾事務
+            mysql.connection.rollback()
+            raise db_error
+            
+    except Exception as e:
+        print(f"刪除行程時發生錯誤: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if cur:
+            cur.close()
 
 @app.route('/<path:path>', methods=['GET'])
 def catch_all(path):

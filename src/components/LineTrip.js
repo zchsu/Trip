@@ -34,6 +34,48 @@ const LineTrip = () => {
     end_time: "",
   });
 
+  // 添加滑動刪除相關狀態
+  const [swipedDetailId, setSwipedDetailId] = useState(null);
+
+  // 在 state 宣告後添加觸控相關的參考值
+  const touchStartX = React.useRef(0);
+  const touchStartY = React.useRef(0);
+  const swipeThreshold = 50; // 設定滑動閾值
+
+  // 添加觸控處理函數
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e, detailId) => {
+    if (!touchStartX.current || !touchStartY.current) return;
+
+    const touchEndX = e.touches[0].clientX;
+    const touchEndY = e.touches[0].clientY;
+
+    const deltaX = touchStartX.current - touchEndX;
+    const deltaY = touchStartY.current - touchEndY;
+
+    // 確保是水平滑動（避免與垂直滾動衝突）
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+      e.preventDefault(); // 防止頁面滾動
+      
+      if (deltaX > swipeThreshold) {
+        // 向左滑動
+        setSwipedDetailId(detailId);
+      } else if (deltaX < -swipeThreshold) {
+        // 向右滑動（收起刪除按鈕）
+        setSwipedDetailId(null);
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    touchStartX.current = 0;
+    touchStartY.current = 0;
+  };
+
   useEffect(() => {
     console.log("Component mounted");
     initializeLiff();
@@ -223,9 +265,27 @@ const LineTrip = () => {
     }
   };
 
+  // 修改 handleAddDetail 函數
   const handleAddDetail = async (e) => {
     e.preventDefault();
     try {
+      // 檢查必要欄位
+      if (!detailData.location || !detailData.date || !detailData.start_time || !detailData.end_time) {
+        alert('請填寫所有必要欄位');
+        return;
+      }
+
+      // 驗證時間格式
+      if (detailData.start_time >= detailData.end_time) {
+        alert('結束時間必須晚於開始時間');
+        return;
+      }
+
+      console.log("正在新增行程細節...", {
+        ...detailData,
+        trip_id: selectedTripId
+      });
+
       const response = await customFetch(`${process.env.REACT_APP_API_URL}/line/trip_detail`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -235,20 +295,56 @@ const LineTrip = () => {
         })
       });
 
-      if (response.ok) {
-        alert('行程細節新增成功');
-        setDetailMode('view');
-        fetchTripDetails(selectedTripId);
-        setDetailData({
-          location: "",
-          date: "",
-          start_time: "",
-          end_time: "",
-        });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
+
+      const result = await response.json();
+      console.log("行程細節新增成功:", result);
+
+      // 重置表單
+      setDetailData({
+        location: "",
+        date: "",
+        start_time: "",
+        end_time: "",
+      });
+      
+      // 切換回檢視模式
+      setDetailMode('view');
+      
+      // 重新獲取行程細節
+      await fetchTripDetails(selectedTripId);
+      
+      alert('行程細節新增成功！');
+
     } catch (e) {
       console.error('新增行程細節失敗:', e);
-      alert('新增行程細節失敗，請稍後再試');
+      alert(`新增行程細節失敗: ${e.message}`);
+    }
+  };
+
+  // 新增刪除函數
+  const handleDeleteDetail = async (detailId) => {
+    if (window.confirm('確定要刪除此行程細節嗎？')) {
+      try {
+        const response = await customFetch(`${process.env.REACT_APP_API_URL}/line/trip_detail/${detailId}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // 更新頁面上的行程細節列表
+        setTripDetails(prevDetails => 
+          prevDetails.filter(detail => detail.detail_id !== detailId)
+        );
+      } catch (e) {
+        console.error('刪除行程細節失敗:', e);
+        setError(`刪除行程細節失敗: ${e.message}`);
+      }
     }
   };
 
@@ -260,6 +356,29 @@ const LineTrip = () => {
       day: 'numeric' 
     });
   };
+
+  const renderTripDetails = (details) => (
+    <div className="details-list">
+      {details.map((detail) => (
+        <div 
+          key={detail.detail_id}
+          className={`detail-card ${swipedDetailId === detail.detail_id ? 'swiped' : ''}`}
+          onTouchStart={handleTouchStart}
+          onTouchMove={(e) => handleTouchMove(e, detail.detail_id)}
+          onTouchEnd={() => handleTouchEnd(detail.detail_id)}
+        >
+          <div className="detail-content">
+            <p><strong>地點：</strong>{detail.location}</p>
+            <p><strong>日期：</strong>{detail.date}</p>
+            <p><strong>時間：</strong>{detail.start_time} - {detail.end_time}</p>
+          </div>
+          <div className="delete-action" onClick={() => handleDeleteDetail(detail.detail_id)}>
+            刪除
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   // 渲染載入中狀態
   if (isLoading) {
@@ -282,32 +401,196 @@ const LineTrip = () => {
     );
   }
 
-  // 渲染行程列表
+  // 修改 renderTripList 函數
   const renderTripList = () => (
     <div className="trips-list">
       <button onClick={() => setMode('add')} className="add-button">
         新增行程
       </button>
       {trips.map((trip) => (
-        <div key={trip.trip_id} className="trip-card">
-          <h3>{trip.title}</h3>
-          <p>{trip.description}</p>
-          <div className="trip-info">
-            <span>
+        <div key={trip.trip_id}>
+          <div className="trip-card">
+            <h3>{trip.title}</h3>
+            <p>{trip.description}</p>
+            <div className="trip-info">
+              <span>
                 {formatDate(trip.start_date)} - {formatDate(trip.end_date)}
-            </span>
-            <span>{trip.area}</span>
+              </span>
+              <span>{trip.area}</span>
+            </div>
+            <div className="trip-actions">
+              <button onClick={() => handleDeleteTrip(trip.trip_id)}>刪除</button>
+              <button onClick={() => {
+                if (selectedTripId === trip.trip_id) {
+                  setSelectedTripId(null);
+                  setShowDetails(false);
+                } else {
+                  setSelectedTripId(trip.trip_id);
+                  setShowDetails(true);
+                  fetchTripDetails(trip.trip_id);
+                }
+              }}>
+                {selectedTripId === trip.trip_id ? '收起細節' : '查看細節'}
+              </button>
+            </div>
           </div>
-          <div className="trip-actions">
-            <button onClick={() => handleDeleteTrip(trip.trip_id)}>刪除</button>
-            <button onClick={() => {
-              setSelectedTripId(trip.trip_id);
-              setShowDetails(true);
-              fetchTripDetails(trip.trip_id);
-            }}>查看細節</button>
+          <div className={`trip-details-container ${selectedTripId === trip.trip_id && showDetails ? 'show' : ''}`}>
+            <div className="details-header">
+              <h3>行程細節</h3>
+              {detailMode === 'view' && (
+                <button 
+                  onClick={() => setDetailMode('add')} 
+                  className="add-detail-button"
+                >
+                  新增細節
+                </button>
+              )}
+            </div>
+            
+            {detailMode === 'add' && selectedTripId === trip.trip_id && (
+              <div className="details-content">
+                <form onSubmit={handleAddDetail} className="detail-form">
+                  <div className="form-group">
+                    <label htmlFor="location">地點 *</label>
+                    <input
+                      id="location"
+                      type="text"
+                      value={detailData.location}
+                      onChange={(e) => setDetailData({...detailData, location: e.target.value})}
+                      required
+                      placeholder="請輸入地點"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="date">日期 *</label>
+                    <input
+                      id="date"
+                      type="date"
+                      value={detailData.date}
+                      onChange={(e) => setDetailData({...detailData, date: e.target.value})}
+                      required
+                      min={tripData.start_date}
+                      max={tripData.end_date}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="start_time">開始時間 *</label>
+                    <input
+                      id="start_time"
+                      type="time"
+                      value={detailData.start_time}
+                      onChange={(e) => setDetailData({...detailData, start_time: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="end_time">結束時間 *</label>
+                    <input
+                      id="end_time"
+                      type="time"
+                      value={detailData.end_time}
+                      onChange={(e) => setDetailData({...detailData, end_time: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div className="button-group">
+                    <button type="submit" className="submit-button">確認新增</button>
+                    <button 
+                      type="button" 
+                      className="cancel-button"
+                      onClick={() => {
+                        setDetailMode('view');
+                        setDetailData({
+                          location: "",
+                          date: "",
+                          start_time: "",
+                          end_time: "",
+                        });
+                      }}
+                    >
+                      取消
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+            
+            {selectedTripId === trip.trip_id && Array.isArray(tripDetails) && tripDetails.length > 0 ? (
+              renderTripDetails(tripDetails)
+            ) : (
+              <p className="no-details">尚未新增行程細節</p>
+            )}
           </div>
         </div>
       ))}
+    </div>
+  );
+
+  // 修改表單部分的程式碼
+  const renderDetailForm = () => (
+    <div className="details-content">
+      <form onSubmit={handleAddDetail} className="detail-form">
+        <div className="form-group">
+          <label htmlFor="location">地點 *</label>
+          <input
+            id="location"
+            type="text"
+            value={detailData.location}
+            onChange={(e) => setDetailData({...detailData, location: e.target.value})}
+            required
+            placeholder="請輸入地點"
+          />
+        </div>
+        <div className="form-group">
+          <label htmlFor="date">日期 *</label>
+          <input
+            id="date"
+            type="date"
+            value={detailData.date}
+            onChange={(e) => setDetailData({...detailData, date: e.target.value})}
+            required
+            min={tripData.start_date}
+            max={tripData.end_date}
+          />
+        </div>
+        <div className="form-group">
+          <label htmlFor="start_time">開始時間 *</label>
+          <input
+            id="start_time"
+            type="time"
+            value={detailData.start_time}
+            onChange={(e) => setDetailData({...detailData, start_time: e.target.value})}
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label htmlFor="end_time">結束時間 *</label>
+          <input
+            id="end_time"
+            type="time"
+            value={detailData.end_time}
+            onChange={(e) => setDetailData({...detailData, end_time: e.target.value})}
+            required
+          />
+        </div>
+        <div className="button-group">
+          <button type="submit">確認新增</button>
+          <button 
+            type="button" 
+            onClick={() => {
+              setDetailMode('view');
+              setDetailData({
+                location: "",
+                date: "",
+                start_time: "",
+                end_time: "",
+              });
+            }}
+          >
+            取消
+          </button>
+        </div>
+      </form>
     </div>
   );
 
@@ -381,77 +664,6 @@ const LineTrip = () => {
 
       {mode === 'list' && renderTripList()}
       {mode === 'add' && renderTripForm()}
-
-      {showDetails && (
-        <div className="trip-details overlay">
-          <div className="detail-content">
-            <h3>行程細節</h3>
-            <button onClick={() => setDetailMode('add')} className="add-detail-button">
-              新增細節
-            </button>
-            <button onClick={() => setShowDetails(false)} className="close-button">
-              關閉
-            </button>
-            {detailMode === 'add' && (
-              <form onSubmit={handleAddDetail} className="detail-form">
-                <div className="form-group">
-                  <label>地點</label>
-                  <input
-                    type="text"
-                    value={detailData.location}
-                    onChange={(e) => setDetailData({...detailData, location: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>日期</label>
-                  <input
-                    type="date"
-                    value={detailData.date}
-                    onChange={(e) => setDetailData({...detailData, date: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>開始時間</label>
-                  <input
-                    type="time"
-                    value={detailData.start_time}
-                    onChange={(e) => setDetailData({...detailData, start_time: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>結束時間</label>
-                  <input
-                    type="time"
-                    value={detailData.end_time}
-                    onChange={(e) => setDetailData({...detailData, end_time: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="button-group">
-                  <button type="submit">新增細節</button>
-                  <button type="button" onClick={() => setDetailMode('view')}>取消</button>
-                </div>
-              </form>
-            )}
-            <div className="details-list">
-            {Array.isArray(tripDetails) && tripDetails.length > 0 ? (
-                tripDetails.map((detail) => (
-                <div key={detail.detail_id} className="detail-card">
-                    <p>地點：{detail.location}</p>
-                    <p>日期：{detail.date}</p>
-                    <p>時間：{detail.start_time} - {detail.end_time}</p>
-                </div>
-                ))
-            ) : (
-                <p className="no-details">尚未新增行程細節</p>
-            )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

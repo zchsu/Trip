@@ -60,6 +60,9 @@
     border-radius: 10px;
     padding: 20px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
   }
   
   .trip-card h3 {
@@ -108,6 +111,151 @@
     color: white;
   }
   
+  /* 行程細節容器新樣式 */
+  .trip-details-container {
+    max-height: 0;
+    opacity: 0;
+    transition: all 0.3s ease;
+    background: rgba(245, 245, 245, 0.9);
+    border-radius: 0 0 10px 10px;
+    margin-top: 10px;
+    overflow: hidden;
+  }
+  
+  .trip-details-container.show {
+    max-height: none; /* 改為 none，不限制高度 */
+    opacity: 1;
+    padding: 20px;
+  }
+  
+  .details-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+  
+  .details-content {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 10px;
+  }
+  
+  .detail-card {
+    position: relative;
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+    touch-action: pan-y pinch-zoom;
+  }
+  
+  .detail-card:hover {
+    transform: translateX(5px);
+  }
+  
+  .detail-content {
+    padding: 15px;
+    background: white;
+    position: relative;
+    z-index: 1;
+    transform: translateX(0);
+    transition: transform 0.3s ease;
+  }
+  
+  .delete-action {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 80px;
+    background-color: #ff4444;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    z-index: 0;
+  }
+  
+  .detail-card.swiped .detail-content {
+    transform: translateX(-80px);
+  }
+  
+  .detail-card.swiped .delete-action {
+    transform: translateX(0);
+  }
+  
+  /* 行程細節表單樣式 */
+  .detail-form {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+  }
+  
+  .detail-form .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .detail-form label {
+    display: block;
+    margin-bottom: 5px;
+    color: #333;
+    font-weight: 500;
+  }
+  
+  .detail-form input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  
+  .detail-form input:focus {
+    border-color: #4CAF50;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+  }
+  
+  .detail-form .button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  
+  .detail-form .button-group button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+  }
+  
+  .detail-form .button-group button[type="submit"] {
+    background: #4CAF50;
+    color: white;
+  }
+  
+  .detail-form .button-group button[type="submit"]:hover {
+    background: #45a049;
+  }
+  
+  .detail-form .button-group button[type="button"] {
+    background: #f5f5f5;
+    color: #333;
+  }
+  
+  .detail-form .button-group button[type="button"]:hover {
+    background: #e0e0e0;
+  }
+  
   /* 表單樣式 */
   .trip-form {
     max-width: 600px;
@@ -141,37 +289,6 @@
   .form-group textarea {
     min-height: 100px;
     resize: vertical;
-  }
-  
-  /* 行程細節彈窗 */
-  .trip-details.overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-  }
-  
-  .detail-content {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    width: 90%;
-    max-width: 600px;
-    max-height: 80vh;
-    overflow-y: auto;
-  }
-  
-  .detail-card {
-    background: #f5f5f5;
-    padding: 15px;
-    margin-bottom: 10px;
-    border-radius: 5px;
   }
   
   /* 載入和錯誤狀態 */
@@ -217,6 +334,8 @@
   
     .trips-list {
       grid-template-columns: 1fr;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 60px; /* 增加底部空間 */
     }
   
     .trip-card {
@@ -243,11 +362,48 @@
   
     .button-group {
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
+      margin-top: 15px;
     }
   
     .button-group button {
       width: 100%;
+      padding: 12px;
+      font-size: 16px;
+    }
+  
+    .trip-details-container {
+      margin: 10px -10px;
+      border-radius: 0;
+      width: calc(100% + 20px);
+    }
+  
+    .trip-details-container.show {
+      padding: 15px;
+    }
+  
+    .detail-form {
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+  
+    .detail-form .form-group {
+      margin-bottom: 12px;
+    }
+  
+    .detail-form input {
+      padding: 10px;
+      font-size: 16px; /* 防止 iOS 自動縮放 */
+    }
+  
+    .detail-card {
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+  
+    .detail-card p {
+      margin: 5px 0;
+      font-size: 14px;
     }
   }
   
@@ -266,26 +422,50 @@
   .button-group {
     display: flex;
     gap: 10px;
-    margin-top: 20px;
+    margin-top: 15px;
   }
   
   .button-group button {
-    padding: 10px 20px;
+    padding: 8px 16px;
     border: none;
-    border-radius: 5px;
+    border-radius: 4px;
     cursor: pointer;
-    font-size: 1rem;
-    transition: background 0.3s ease;
+    font-size: 14px;
+    transition: all 0.3s ease;
   }
   
-  .button-group button[type="submit"] {
-    background: #4CAF50;
+  .button-group .submit-button {
+    background-color: #4CAF50;
     color: white;
   }
   
-  .button-group button[type="button"] {
-    background: #f44336;
+  .button-group .submit-button:hover {
+    background-color: #45a049;
+  }
+  
+  .button-group .cancel-button {
+    background-color: #f5f5f5;
+    color: #333;
+  }
+  
+  .button-group .cancel-button:hover {
+    background-color: #e0e0e0;
+  }
+  
+  /* 行程細節按鈕樣式 */
+  .add-detail-button {
+    padding: 8px 16px;
+    background-color: #4CAF50;
     color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .add-detail-button:hover {
+    background-color: #45a049;
   }
   
   /* 深色模式支援 */
@@ -317,6 +497,51 @@
     .trip-card p,
     .trip-info {
       color: #ccc;
+    }
+  
+    .trip-details-container {
+      background: rgba(45, 45, 45, 0.9);
+    }
+  
+    .detail-card {
+      background: #333;
+      border-left: 4px solid #1976D2;
+    }
+  
+    .detail-content {
+      background: #333;
+    }
+  
+    .delete-action {
+      background-color: #cc0000;
+    }
+  
+    .details-content {
+      background: #2d2d2d;
+    }
+  
+    .button-group .cancel-button {
+      background-color: #424242;
+      color: #fff;
+    }
+  
+    .button-group .cancel-button:hover {
+      background-color: #616161;
+    }
+  }
+  
+  /* 確保深色模式在手機上也正常運作 */
+  @media (prefers-color-scheme: dark) and (max-width: 767px) {
+    .trip-details-container {
+      background: #2d2d2d;
+    }
+  
+    .detail-form {
+      background: #333;
+    }
+  
+    .detail-card {
+      background: #404040;
     }
   }
   
