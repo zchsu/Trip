@@ -27,6 +27,7 @@ const LineTrip = () => {
   const [selectedTripId, setSelectedTripId] = useState(null);
   const [detailMode, setDetailMode] = useState("view");
   const [currentDetail, setCurrentDetail] = useState(null);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false); // 新增狀態
   const [detailData, setDetailData] = useState({
     location: "",
     date: "",
@@ -239,6 +240,7 @@ const LineTrip = () => {
   };
 
   const fetchTripDetails = async (tripId) => {
+    setIsLoadingDetails(true); // 開始載入
     try {
       console.log("正在獲取行程細節...");
       const response = await customFetch(`${process.env.REACT_APP_API_URL}/line/trip_detail/${tripId}`, {
@@ -257,11 +259,12 @@ const LineTrip = () => {
       console.log("行程細節資料:", data);
       
       setTripDetails(Array.isArray(data) ? data : []);
-      
     } catch (e) {
       console.error('獲取行程細節失敗:', e);
       setTripDetails([]); 
       setError(`獲取行程細節失敗: ${e.message}`);
+    } finally {
+      setIsLoadingDetails(false); // 結束載入
     }
   };
 
@@ -357,28 +360,38 @@ const LineTrip = () => {
     });
   };
 
-  const renderTripDetails = (details) => (
-    <div className="details-list">
-      {details.map((detail) => (
-        <div 
-          key={detail.detail_id}
-          className={`detail-card ${swipedDetailId === detail.detail_id ? 'swiped' : ''}`}
-          onTouchStart={handleTouchStart}
-          onTouchMove={(e) => handleTouchMove(e, detail.detail_id)}
-          onTouchEnd={() => handleTouchEnd(detail.detail_id)}
-        >
-          <div className="detail-content">
-            <p><strong>地點：</strong>{detail.location}</p>
-            <p><strong>日期：</strong>{detail.date}</p>
-            <p><strong>時間：</strong>{detail.start_time} - {detail.end_time}</p>
+  const renderTripDetails = (details) => {
+    if (isLoadingDetails) {
+      return <p className="loading-details">載入中...</p>; // 顯示載入中
+    }
+  
+    if (!details || details.length === 0) {
+      return <p className="no-details">尚未新增行程細節</p>; // 顯示無細節
+    }
+  
+    return (
+      <div className="details-list">
+        {details.map((detail) => (
+          <div 
+            key={detail.detail_id}
+            className={`detail-card ${swipedDetailId === detail.detail_id ? 'swiped' : ''}`}
+            onTouchStart={handleTouchStart}
+            onTouchMove={(e) => handleTouchMove(e, detail.detail_id)}
+            onTouchEnd={() => handleTouchEnd(detail.detail_id)}
+          >
+            <div className="detail-content">
+              <p><strong>地點：</strong>{detail.location}</p>
+              <p><strong>日期：</strong>{detail.date}</p>
+              <p><strong>時間：</strong>{detail.start_time} - {detail.end_time}</p>
+            </div>
+            <div className="delete-action" onClick={() => handleDeleteDetail(detail.detail_id)}>
+              刪除
+            </div>
           </div>
-          <div className="delete-action" onClick={() => handleDeleteDetail(detail.detail_id)}>
-            刪除
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+        ))}
+      </div>
+    );
+  };
 
   // 渲染載入中狀態
   if (isLoading) {
