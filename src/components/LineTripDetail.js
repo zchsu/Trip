@@ -21,6 +21,7 @@ const TripDetail = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [currentX, setCurrentX] = useState(0);
+  const [showAddForm, setShowAddForm] = useState(false);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const swipeThreshold = 50;
@@ -175,6 +176,36 @@ const TripDetail = () => {
     }
   };
 
+  // 處理新增行程細節
+  const handleAddDetail = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/line/trip_detail`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(detailData)
+      });
+
+      if (!response.ok) throw new Error('新增行程細節失敗');
+      
+      setShowAddForm(false);
+      setDetailData({ location: "", date: "", start_time: "", end_time: "" });
+      alert('新增成功！'); // 添加成功提示
+      
+      // 重新載入行程細節
+      const refreshResponse = await fetch(`${process.env.REACT_APP_API_URL}/line/trip_detail/${tripId}`);
+      if (!refreshResponse.ok) throw new Error('重新載入行程細節失敗');
+      const refreshData = await refreshResponse.json();
+      setTripDetails(refreshData);
+      
+    } catch (err) {
+      setError(err.message);
+      alert(`新增失敗：${err.message}`); // 添加錯誤提示
+    }
+  };
+
   // 修改渲染行程細節的部分
   const renderDetailItem = (detail) => (
     <div 
@@ -291,7 +322,7 @@ const TripDetail = () => {
   );
 
   return (
-    <div className="trip-detail-container" onClick={handleBackgroundClick}>
+    <div className="trip-detail-container">
       <header className="trip-detail-header">
         <button className="back-button" onClick={() => navigate(-1)}>
           返回行程列表
@@ -311,7 +342,68 @@ const TripDetail = () => {
         ))}
       </div>
 
-      <div className="day-details" onClick={e => e.stopPropagation()}>
+      {/* 添加新增行程細節按鈕 */}
+      <div className="add-detail-section">
+        <button 
+          className="add-detail-button"
+          onClick={() => setShowAddForm(true)}
+        >
+          新增行程細節
+        </button>
+      </div>
+
+      {/* 新增行程細節表單 */}
+      {showAddForm && (
+        <form onSubmit={handleAddDetail} className="detail-form">
+          <h3>新增行程細節</h3>
+          <div className="form-group">
+            <label>地點 *</label>
+            <input
+              type="text"
+              value={detailData.location}
+              onChange={(e) => setDetailData({...detailData, location: e.target.value})}
+              placeholder="例如：東京晴空塔"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>日期 *</label>
+            <input
+              type="date"
+              value={detailData.date}
+              onChange={(e) => setDetailData({...detailData, date: e.target.value})}
+              min={startDate}
+              max={endDate}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>開始時間 *</label>
+            <input
+              type="time"
+              value={detailData.start_time}
+              onChange={(e) => setDetailData({...detailData, start_time: e.target.value})}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>結束時間 *</label>
+            <input
+              type="time"
+              value={detailData.end_time}
+              onChange={(e) => setDetailData({...detailData, end_time: e.target.value})}
+              required
+            />
+          </div>
+          <div className="button-group">
+            <button type="submit">確認新增</button>
+            <button type="button" onClick={() => setShowAddForm(false)}>取消</button>
+          </div>
+        </form>
+      )}
+
+      {/* 已有的行程細節列表 */}
+      <div className="day-details">
         <h2>第 {selectedDay} 天行程</h2>
         <div className="details-list">
           {getDayDetails(selectedDay).length > 0 ? (
