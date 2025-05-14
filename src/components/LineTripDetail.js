@@ -18,6 +18,9 @@ const TripDetail = () => {
     end_time: ""
   });
   const [swipedDetailId, setSwipedDetailId] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [currentX, setCurrentX] = useState(0);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const swipeThreshold = 50;
@@ -55,25 +58,38 @@ const TripDetail = () => {
   if (isLoading) return <div className="loading">載入中...</div>;
   if (error) return <div className="error">{error}</div>;
 
-  // 添加觸控處理函數
-  const handleTouchStart = (e) => {
+  // 修改觸控處理函數
+  const handleTouchStart = (e, detailId) => {
+    setIsDragging(true);
+    setStartX(e.touches[0].clientX);
+    setCurrentX(0);
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
   };
 
-  // 修改觸控處理函數
   const handleTouchMove = (e, detailId) => {
-    if (!touchStartX.current || !touchStartY.current) return;
+    if (!isDragging) return;
 
     const touchEndX = e.touches[0].clientX;
     const touchEndY = e.touches[0].clientY;
     const deltaX = touchStartX.current - touchEndX;
     const deltaY = touchStartY.current - touchEndY;
 
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > swipeThreshold) {
+    // 確保是水平滑動
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
       e.preventDefault();
-      // 如果是向左滑動(deltaX > 0)則顯示按鈕，向右滑動則隱藏
-      if (deltaX > 0) {
+      const diff = startX - touchEndX;
+      setCurrentX(diff);
+
+      // 限制滑動範圍
+      if (diff > 120) {
+        setCurrentX(120);
+      } else if (diff < 0) {
+        setCurrentX(0);
+      }
+
+      // 根據滑動距離設置 swipedDetailId
+      if (diff > swipeThreshold) {
         setSwipedDetailId(detailId);
       } else {
         setSwipedDetailId(null);
@@ -81,21 +97,20 @@ const TripDetail = () => {
     }
   };
 
-  // 在 handleTouchMove 函數後添加
   const handleTouchEnd = (detailId) => {
+    setIsDragging(false);
+    
+    // 如果滑動距離大於閾值，保持展開狀態
+    if (currentX > swipeThreshold) {
+      setCurrentX(120);
+      setSwipedDetailId(detailId);
+    } else {
+      setCurrentX(0);
+      setSwipedDetailId(null);
+    }
+    
     touchStartX.current = 0;
     touchStartY.current = 0;
-    
-    // 如果滑動距離不夠，重置滑動狀態
-    if (swipedDetailId === detailId) {
-      const currentTarget = document.querySelector(`[data-detail-id="${detailId}"]`);
-      if (currentTarget) {
-        const rect = currentTarget.getBoundingClientRect();
-        if (rect.x > -50) { // 如果元素沒有滑動足夠距離
-          setSwipedDetailId(null);
-        }
-      }
-    }
   };
 
   // 添加點擊背景關閉滑動選單
@@ -164,69 +179,91 @@ const TripDetail = () => {
   const renderDetailItem = (detail) => (
     <div 
       key={detail.detail_id}
-      data-detail-id={detail.detail_id}  // 添加這個屬性
-      className={`detail-item ${swipedDetailId === detail.detail_id ? 'swiped' : ''}`}
-      onTouchStart={handleTouchStart}
+      data-detail-id={detail.detail_id}
+      className={`detail-item`}
+      onTouchStart={(e) => handleTouchStart(e, detail.detail_id)}
       onTouchMove={(e) => handleTouchMove(e, detail.detail_id)}
       onTouchEnd={() => handleTouchEnd(detail.detail_id)}
+      style={{
+        touchAction: 'pan-y pinch-zoom'
+      }}
     >
-      {editingDetail === detail.detail_id ? (
-        <form onSubmit={(e) => handleUpdateDetail(e, detail.detail_id)} className="detail-edit-form">
-          <div className="form-group">
-            <label>地點</label>
-            <input
-              type="text"
-              value={detailData.location}
-              onChange={(e) => setDetailData({...detailData, location: e.target.value})}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>日期</label>
-            <input
-              type="date"
-              value={detailData.date}
-              onChange={(e) => setDetailData({...detailData, date: e.target.value})}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>開始時間</label>
-            <input
-              type="time"
-              value={detailData.start_time}
-              onChange={(e) => setDetailData({...detailData, start_time: e.target.value})}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>結束時間</label>
-            <input
-              type="time"
-              value={detailData.end_time}
-              onChange={(e) => setDetailData({...detailData, end_time: e.target.value})}
-              required
-            />
-          </div>
-          <div className="button-group">
-            <button type="submit">確認</button>
-            <button type="button" onClick={() => setEditingDetail(null)}>取消</button>
-          </div>
-        </form>
-      ) : (
-        <>
-          <div className="detail-content">
+      <div 
+        className="detail-content"
+        style={{
+          transform: swipedDetailId === detail.detail_id 
+            ? `translateX(-120px)` 
+            : `translateX(-${currentX}px)`
+        }}
+      >
+        {editingDetail === detail.detail_id ? (
+          <form onSubmit={(e) => handleUpdateDetail(e, detail.detail_id)} className="detail-edit-form">
+            <div className="form-group">
+              <label>地點</label>
+              <input
+                type="text"
+                value={detailData.location}
+                onChange={(e) => setDetailData({...detailData, location: e.target.value})}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>日期</label>
+              <input
+                type="date"
+                value={detailData.date}
+                onChange={(e) => setDetailData({...detailData, date: e.target.value})}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>開始時間</label>
+              <input
+                type="time"
+                value={detailData.start_time}
+                onChange={(e) => setDetailData({...detailData, start_time: e.target.value})}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>結束時間</label>
+              <input
+                type="time"
+                value={detailData.end_time}
+                onChange={(e) => setDetailData({...detailData, end_time: e.target.value})}
+                required
+              />
+            </div>
+            <div className="button-group">
+              <button type="submit">確認</button>
+              <button type="button" onClick={() => setEditingDetail(null)}>取消</button>
+            </div>
+          </form>
+        ) : (
+          <>
             <div className="time-range">
               {detail.start_time} - {detail.end_time}
             </div>
             <div className="location">
               {detail.location}
             </div>
-          </div>
-          <div className="action-buttons">
+          </>
+        )}
+      </div>
+      <div 
+        className="action-buttons"
+        style={{
+          transform: swipedDetailId === detail.detail_id 
+            ? 'translateX(0)' 
+            : `translateX(${120 - currentX}px)`
+        }}
+      >
+        {editingDetail !== detail.detail_id && (
+          <>
             <button 
               className="edit-action"
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 setEditingDetail(detail.detail_id);
                 setDetailData({
                   location: detail.location,
@@ -240,13 +277,16 @@ const TripDetail = () => {
             </button>
             <button 
               className="delete-action"
-              onClick={() => handleDeleteDetail(detail.detail_id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteDetail(detail.detail_id);
+              }}
             >
               刪除
             </button>
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 
