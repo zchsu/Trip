@@ -35,7 +35,10 @@ const LineTrip = () => {
     end_time: "",
   });
 
-  // 添加滑動刪除相關狀態
+  // 在 state 中添加編輯模式
+  const [editMode, setEditMode] = useState(null); // 'trip' 或 'detail' 或 null
+  const [editingTrip, setEditingTrip] = useState(null);
+  const [editingDetail, setEditingDetail] = useState(null);
   const [swipedDetailId, setSwipedDetailId] = useState(null);
 
   // 在 state 宣告後添加觸控相關的參考值
@@ -351,6 +354,54 @@ const LineTrip = () => {
     }
   };
 
+  // 添加處理更新行程的函數
+  const handleUpdateTrip = async (e, tripId) => {
+    e.preventDefault();
+    try {
+      const response = await customFetch(`${process.env.REACT_APP_API_URL}/line/trip/${tripId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(tripData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      alert('行程更新成功');
+      setEditMode(null);
+      setEditingTrip(null);
+      fetchTrips(userProfile.userId);
+    } catch (e) {
+      console.error('更新行程失敗:', e);
+      alert(`更新行程失敗: ${e.message}`);
+    }
+  };
+
+  // 添加處理更新行程細節的函數
+  const handleUpdateDetail = async (e, detailId) => {
+    e.preventDefault();
+    try {
+      const response = await customFetch(`${process.env.REACT_APP_API_URL}/line/trip_detail/${detailId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(detailData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      alert('行程細節更新成功');
+      setEditMode(null);
+      setEditingDetail(null);
+      fetchTripDetails(selectedTripId);
+    } catch (e) {
+      console.error('更新行程細節失敗:', e);
+      alert(`更新行程細節失敗: ${e.message}`);
+    }
+  };
+
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { 
@@ -423,29 +474,82 @@ const LineTrip = () => {
       {trips.map((trip) => (
         <div key={trip.trip_id}>
           <div className="trip-card">
-            <h3>{trip.title}</h3>
-            <p>{trip.description}</p>
-            <div className="trip-info">
-              <span>
-                {formatDate(trip.start_date)} - {formatDate(trip.end_date)}
-              </span>
-              <span>{trip.area}</span>
-            </div>
-            <div className="trip-actions">
-              <button onClick={() => handleDeleteTrip(trip.trip_id)}>刪除</button>
-              <button onClick={() => {
-                if (selectedTripId === trip.trip_id) {
-                  setSelectedTripId(null);
-                  setShowDetails(false);
-                } else {
-                  setSelectedTripId(trip.trip_id);
-                  setShowDetails(true);
-                  fetchTripDetails(trip.trip_id);
-                }
-              }}>
-                {selectedTripId === trip.trip_id ? '收起細節' : '查看細節'}
-              </button>
-            </div>
+            {editMode === 'trip' && editingTrip === trip.trip_id ? (
+              <form onSubmit={(e) => handleUpdateTrip(e, trip.trip_id)} className="trip-edit-form">
+                <input
+                  type="text"
+                  value={tripData.title}
+                  onChange={(e) => setTripData({...tripData, title: e.target.value})}
+                  required
+                />
+                <textarea
+                  value={tripData.description}
+                  onChange={(e) => setTripData({...tripData, description: e.target.value})}
+                />
+                <input
+                  type="date"
+                  value={tripData.start_date}
+                  onChange={(e) => setTripData({...tripData, start_date: e.target.value})}
+                  required
+                />
+                <input
+                  type="date"
+                  value={tripData.end_date}
+                  onChange={(e) => setTripData({...tripData, end_date: e.target.value})}
+                  required
+                />
+                <input
+                  type="text"
+                  value={tripData.area}
+                  onChange={(e) => setTripData({...tripData, area: e.target.value})}
+                  required
+                />
+                <div className="button-group">
+                  <button type="submit">確認</button>
+                  <button type="button" onClick={() => {
+                    setEditMode(null);
+                    setEditingTrip(null);
+                  }}>取消</button>
+                </div>
+              </form>
+            ) : (
+              <>
+                <h3>{trip.title}</h3>
+                <p>{trip.description}</p>
+                <div className="trip-info">
+                  <span>
+                    {formatDate(trip.start_date)} - {formatDate(trip.end_date)}
+                  </span>
+                  <span>{trip.area}</span>
+                </div>
+                <div className="trip-actions">
+                  <button onClick={() => {
+                    setEditMode('trip');
+                    setEditingTrip(trip.trip_id);
+                    setTripData({
+                      title: trip.title,
+                      description: trip.description,
+                      start_date: trip.start_date,
+                      end_date: trip.end_date,
+                      area: trip.area
+                    });
+                  }}>編輯</button>
+                  <button onClick={() => handleDeleteTrip(trip.trip_id)}>刪除</button>
+                  <button onClick={() => {
+                    if (selectedTripId === trip.trip_id) {
+                      setSelectedTripId(null);
+                      setShowDetails(false);
+                    } else {
+                      setSelectedTripId(trip.trip_id);
+                      setShowDetails(true);
+                      fetchTripDetails(trip.trip_id);
+                    }
+                  }}>
+                    {selectedTripId === trip.trip_id ? '收起細節' : '查看細節'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
           <div className={`trip-details-container ${selectedTripId === trip.trip_id && showDetails ? 'show' : ''}`}>
             <div className="details-header">
