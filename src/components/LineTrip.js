@@ -560,13 +560,13 @@ const LineTrip = () => {
                 />
                 <input
                   type="date"
-                  value={trip.start_date} // 使用原始日期
+                  value={tripData.start_date}  // 改為使用 tripData 的值
                   onChange={(e) => setTripData({...tripData, start_date: e.target.value})}
                   required
                 />
                 <input
                   type="date"
-                  value={trip.end_date} // 使用原始日期
+                  value={tripData.end_date}    // 改為使用 tripData 的值
                   onChange={(e) => setTripData({...tripData, end_date: e.target.value})}
                   required
                 />
@@ -597,18 +597,6 @@ const LineTrip = () => {
                 </div>
                 <div className="trip-actions">
                   <button onClick={() => {
-                    setEditMode('trip');
-                    setEditingTrip(trip.trip_id);
-                    setTripData({
-                      title: trip.title,
-                      description: trip.description,
-                      start_date: trip.start_date,
-                      end_date: trip.end_date,
-                      area: trip.area
-                    });
-                  }}>編輯</button>
-                  <button onClick={() => handleDeleteTrip(trip.trip_id)}>刪除</button>
-                  <button onClick={() => {
                     if (selectedTripId === trip.trip_id) {
                       setSelectedTripId(null);
                       setShowDetails(false);
@@ -620,6 +608,18 @@ const LineTrip = () => {
                   }}>
                     {selectedTripId === trip.trip_id ? '收起細節' : '查看細節'}
                   </button>
+                  <button onClick={() => {
+                    setEditMode('trip');
+                    setEditingTrip(trip.trip_id);
+                    setTripData({
+                      title: trip.title,
+                      description: trip.description,
+                      start_date: trip.start_date,
+                      end_date: trip.end_date,
+                      area: trip.area
+                    });
+                  }}>編輯</button>
+                  <button onClick={() => handleDeleteTrip(trip.trip_id)}>刪除</button>
                 </div>
               </>
             )}
