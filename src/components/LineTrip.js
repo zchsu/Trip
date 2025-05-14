@@ -413,13 +413,13 @@ const LineTrip = () => {
 
   const renderTripDetails = (details) => {
     if (isLoadingDetails) {
-      return <p className="loading-details">載入中...</p>; // 顯示載入中
+      return <p className="loading-details">載入中...</p>;
     }
-  
+
     if (!details || details.length === 0) {
-      return <p className="no-details">尚未新增行程細節</p>; // 顯示無細節
+      return <p className="no-details">尚未新增行程細節</p>;
     }
-  
+
     return (
       <div className="details-list">
         {details.map((detail) => (
@@ -430,14 +430,84 @@ const LineTrip = () => {
             onTouchMove={(e) => handleTouchMove(e, detail.detail_id)}
             onTouchEnd={() => handleTouchEnd(detail.detail_id)}
           >
-            <div className="detail-content">
-              <p><strong>地點：</strong>{detail.location}</p>
-              <p><strong>日期：</strong>{detail.date}</p>
-              <p><strong>時間：</strong>{detail.start_time} - {detail.end_time}</p>
-            </div>
-            <div className="delete-action" onClick={() => handleDeleteDetail(detail.detail_id)}>
-              刪除
-            </div>
+            {editMode === 'detail' && editingDetail === detail.detail_id ? (
+              <form onSubmit={(e) => handleUpdateDetail(e, detail.detail_id)} className="detail-edit-form">
+                <div className="form-group">
+                  <label>地點</label>
+                  <input
+                    type="text"
+                    value={detailData.location}
+                    onChange={(e) => setDetailData({...detailData, location: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>日期</label>
+                  <input
+                    type="date"
+                    value={detailData.date}
+                    onChange={(e) => setDetailData({...detailData, date: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>開始時間</label>
+                  <input
+                    type="time"
+                    value={detailData.start_time}
+                    onChange={(e) => setDetailData({...detailData, start_time: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>結束時間</label>
+                  <input
+                    type="time"
+                    value={detailData.end_time}
+                    onChange={(e) => setDetailData({...detailData, end_time: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="button-group">
+                  <button type="submit">確認</button>
+                  <button type="button" onClick={() => {
+                    setEditMode(null);
+                    setEditingDetail(null);
+                  }}>取消</button>
+                </div>
+              </form>
+            ) : (
+              <>
+                <div className="detail-content">
+                  <p><strong>地點：</strong>{detail.location}</p>
+                  <p><strong>日期：</strong>{detail.date}</p>
+                  <p><strong>時間：</strong>{detail.start_time} - {detail.end_time}</p>
+                </div>
+                <div className="action-buttons">
+                  <button 
+                    className="edit-action"
+                    onClick={() => {
+                      setEditMode('detail');
+                      setEditingDetail(detail.detail_id);
+                      setDetailData({
+                        location: detail.location,
+                        date: detail.date,
+                        start_time: detail.start_time,
+                        end_time: detail.end_time
+                      });
+                    }}
+                  >
+                    編輯
+                  </button>
+                  <button 
+                    className="delete-action"
+                    onClick={() => handleDeleteDetail(detail.detail_id)}
+                  >
+                    刪除
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         ))}
       </div>
@@ -480,21 +550,23 @@ const LineTrip = () => {
                   type="text"
                   value={tripData.title}
                   onChange={(e) => setTripData({...tripData, title: e.target.value})}
+                  placeholder="行程標題"
                   required
                 />
                 <textarea
                   value={tripData.description}
                   onChange={(e) => setTripData({...tripData, description: e.target.value})}
+                  placeholder="行程描述"
                 />
                 <input
                   type="date"
-                  value={tripData.start_date}
+                  value={trip.start_date} // 使用原始日期
                   onChange={(e) => setTripData({...tripData, start_date: e.target.value})}
                   required
                 />
                 <input
                   type="date"
-                  value={tripData.end_date}
+                  value={trip.end_date} // 使用原始日期
                   onChange={(e) => setTripData({...tripData, end_date: e.target.value})}
                   required
                 />
@@ -502,6 +574,7 @@ const LineTrip = () => {
                   type="text"
                   value={tripData.area}
                   onChange={(e) => setTripData({...tripData, area: e.target.value})}
+                  placeholder="地區"
                   required
                 />
                 <div className="button-group">
