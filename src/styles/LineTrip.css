@@ -12,6 +12,7 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
+    background-color: #f5f5f5;  /* 新增背景顏色 */
   }
   
   /* 用戶資料區塊 */
@@ -68,10 +69,15 @@
     background: white;
     border-radius: 10px;
     padding: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 8px rgba(70, 130, 180, 0.2);  /* 加深陰影 */
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
+  }
+  
+  .trip-card:hover {
+    box-shadow: 0 6px 12px rgba(70, 130, 180, 0.3);  /* 懸停時更深的陰影 */
+    transform: translateY(-2px);  /* 輕微上浮效果 */
   }
   
   .trip-card h3 {
@@ -169,7 +175,7 @@
     margin-bottom: 10px;
     border-radius: 8px;
     background: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 8px rgba(70, 130, 180, 0.2);  /* 加深陰影 */
   }
   
   .detail-content {
