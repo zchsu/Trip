@@ -1,3 +1,12 @@
+/* 修改主要顏色變數 */
+:root {
+  --primary-color: #4682b4;      /* Steel Blue - 主要顏色 */
+  --primary-dark: #375f8a;       /* 深色版本 - 懸停效果 */
+  --primary-light: #6b9ac4;      /* 淺色版本 - 次要元素 */
+  --secondary-color: #a8c6df;    /* 更淺的藍 - 背景等 */
+  --accent-color: #2c4d6e;       /* 深藍 - 強調元素 */
+}
+
 /* 基本容器樣式 */
 .trip-container {
     max-width: 1200px;
@@ -624,3 +633,134 @@
       border-color: #555;
     }
   }
+
+  /* 修改按鈕顏色 */
+.add-button {
+  background: var(--primary-color);
+}
+
+.add-button:hover {
+  background: var(--primary-dark);
+}
+
+/* 行程卡片按鈕 */
+.trip-actions button:first-child {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.trip-actions button:nth-child(2) {
+  background-color: var(--primary-light);
+  color: white;
+}
+
+.trip-actions button:nth-child(3) {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+/* 行程細節相關 */
+.add-detail-button {
+  background-color: var(--primary-color);
+}
+
+.add-detail-button:hover {
+  background-color: var(--primary-dark);
+}
+
+/* 編輯和刪除按鈕 */
+.edit-action {
+  background-color: var(--primary-color);
+}
+
+.delete-action {
+  background-color: var(--accent-color);
+}
+
+/* 表單相關 */
+.detail-form .button-group button[type="submit"],
+.trip-form .button-group button[type="submit"] {
+  background: var(--primary-color);
+}
+
+.detail-form .button-group button[type="submit"]:hover,
+.trip-form .button-group button[type="submit"]:hover {
+  background: var(--primary-dark);
+}
+
+/* 確認按鈕 */
+.button-group .submit-button {
+  background-color: var(--primary-color);
+}
+
+.button-group .submit-button:hover {
+  background-color: var(--primary-dark);
+}
+
+/* 載入動畫 */
+.loading-spinner {
+  border-top-color: var(--primary-color);
+}
+
+/* 深色模式調整 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary-color: #5a91c4;    /* 稍微亮一點的藍色 */
+    --primary-dark: #4682b4;     /* 原始的 Steel Blue */
+    --primary-light: #7ba7d0;    /* 更亮的藍色 */
+    --secondary-color: #2c4d6e;  /* 深藍色背景 */
+    --accent-color: #a8c6df;     /* 淺藍色強調 */
+  }
+
+  .trip-container {
+    background: #1a2634;
+  }
+
+  .trip-card,
+  .trip-form,
+  .detail-content,
+  .user-profile {
+    background: #243447;
+  }
+
+  .detail-card {
+    background: #2c4d6e;
+    border-left: 4px solid var(--primary-color);
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(70, 130, 180, 0.2);
+  }
+}
+
+/* 表單輸入框焦點效果 */
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(70, 130, 180, 0.2);
+}
+
+/* 卡片陰影效果 */
+.trip-card,
+.detail-card {
+  box-shadow: 0 2px 4px rgba(70, 130, 180, 0.1);
+}
+
+/* 滑動效果顏色 */
+.detail-card.swiped {
+  background: #eef2f7;
+}
+
+/* 新增細節按鈕 */
+.add-detail-button {
+  background-color: var(--primary-color);
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+.add-detail-button:hover {
+  background-color: var(--primary-dark);
+}
