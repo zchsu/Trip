@@ -76,6 +76,7 @@
   .detail-item {
     position: relative;
     overflow: hidden;
+    cursor: pointer;
     border-radius: 8px;
     background: white;
     margin-bottom: 10px;
@@ -118,12 +119,18 @@
     background-color: var(--accent-color);
   }
   
+  /* 修改滑動效果 */
   .detail-item.swiped .detail-content {
     transform: translateX(-120px);
   }
   
   .detail-item.swiped .action-buttons {
     transform: translateX(0);
+  }
+  
+  /* 添加觸控反饋 */
+  .detail-item:active {
+    background-color: rgba(0, 0, 0, 0.05);
   }
   
   .detail-edit-form {
@@ -185,4 +192,24 @@
     .day-button {
       background: #243447;
     }
+  }
+  
+  /* 添加編輯成功提示樣式 */
+  .success-message {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #4caf50;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    z-index: 1000;
+    animation: fadeOut 2s forwards;
+  }
+  
+  @keyframes fadeOut {
+    0% { opacity: 1; }
+    70% { opacity: 1; }
+    100% { opacity: 0; }
   }

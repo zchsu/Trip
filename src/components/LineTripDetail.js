@@ -61,6 +61,7 @@ const TripDetail = () => {
     touchStartY.current = e.touches[0].clientY;
   };
 
+  // 修改觸控處理函數
   const handleTouchMove = (e, detailId) => {
     if (!touchStartX.current || !touchStartY.current) return;
 
@@ -71,13 +72,37 @@ const TripDetail = () => {
 
     if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > swipeThreshold) {
       e.preventDefault();
-      setSwipedDetailId(detailId);
+      // 如果是向左滑動(deltaX > 0)則顯示按鈕，向右滑動則隱藏
+      if (deltaX > 0) {
+        setSwipedDetailId(detailId);
+      } else {
+        setSwipedDetailId(null);
+      }
     }
   };
 
-  const handleTouchEnd = () => {
+  // 在 handleTouchMove 函數後添加
+  const handleTouchEnd = (detailId) => {
     touchStartX.current = 0;
     touchStartY.current = 0;
+    
+    // 如果滑動距離不夠，重置滑動狀態
+    if (swipedDetailId === detailId) {
+      const currentTarget = document.querySelector(`[data-detail-id="${detailId}"]`);
+      if (currentTarget) {
+        const rect = currentTarget.getBoundingClientRect();
+        if (rect.x > -50) { // 如果元素沒有滑動足夠距離
+          setSwipedDetailId(null);
+        }
+      }
+    }
+  };
+
+  // 添加點擊背景關閉滑動選單
+  const handleBackgroundClick = () => {
+    if (swipedDetailId) {
+      setSwipedDetailId(null);
+    }
   };
 
   // 處理更新行程細節
@@ -95,12 +120,17 @@ const TripDetail = () => {
       if (!response.ok) throw new Error('更新行程細節失敗');
       
       setEditingDetail(null);
-      const updatedDetails = await response.json();
-      setTripDetails(tripDetails.map(detail => 
-        detail.detail_id === detailId ? updatedDetails : detail
-      ));
+      alert('更新成功！'); // 添加成功提示
+      
+      // 重新載入行程細節
+      const refreshResponse = await fetch(`${process.env.REACT_APP_API_URL}/line/trip_detail/${tripId}`);
+      if (!refreshResponse.ok) throw new Error('重新載入行程細節失敗');
+      const refreshData = await refreshResponse.json();
+      setTripDetails(refreshData);
+      
     } catch (err) {
       setError(err.message);
+      alert(`更新失敗：${err.message}`); // 添加錯誤提示
     }
   };
 
@@ -114,9 +144,18 @@ const TripDetail = () => {
 
         if (!response.ok) throw new Error('刪除行程細節失敗');
         
-        setTripDetails(tripDetails.filter(detail => detail.detail_id !== detailId));
+        alert('刪除成功！'); // 添加成功提示
+        setSwipedDetailId(null); // 重置滑動狀態
+        
+        // 重新載入行程細節
+        const refreshResponse = await fetch(`${process.env.REACT_APP_API_URL}/line/trip_detail/${tripId}`);
+        if (!refreshResponse.ok) throw new Error('重新載入行程細節失敗');
+        const refreshData = await refreshResponse.json();
+        setTripDetails(refreshData);
+        
       } catch (err) {
         setError(err.message);
+        alert(`刪除失敗：${err.message}`); // 添加錯誤提示
       }
     }
   };
@@ -125,10 +164,11 @@ const TripDetail = () => {
   const renderDetailItem = (detail) => (
     <div 
       key={detail.detail_id}
+      data-detail-id={detail.detail_id}  // 添加這個屬性
       className={`detail-item ${swipedDetailId === detail.detail_id ? 'swiped' : ''}`}
       onTouchStart={handleTouchStart}
       onTouchMove={(e) => handleTouchMove(e, detail.detail_id)}
-      onTouchEnd={handleTouchEnd}
+      onTouchEnd={() => handleTouchEnd(detail.detail_id)}
     >
       {editingDetail === detail.detail_id ? (
         <form onSubmit={(e) => handleUpdateDetail(e, detail.detail_id)} className="detail-edit-form">
@@ -211,7 +251,7 @@ const TripDetail = () => {
   );
 
   return (
-    <div className="trip-detail-container">
+    <div className="trip-detail-container" onClick={handleBackgroundClick}>
       <header className="trip-detail-header">
         <button className="back-button" onClick={() => navigate(-1)}>
           返回行程列表
@@ -231,7 +271,7 @@ const TripDetail = () => {
         ))}
       </div>
 
-      <div className="day-details">
+      <div className="day-details" onClick={e => e.stopPropagation()}>
         <h2>第 {selectedDay} 天行程</h2>
         <div className="details-list">
           {getDayDetails(selectedDay).length > 0 ? (
