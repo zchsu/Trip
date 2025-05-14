@@ -548,39 +548,60 @@ const LineTrip = () => {
         >
           {editMode === 'trip' && editingTrip === trip.trip_id ? (
             <form onSubmit={(e) => handleUpdateTrip(e, trip.trip_id)} className="trip-edit-form">
-              <input
-                type="text"
-                value={tripData.title}
-                onChange={(e) => setTripData({...tripData, title: e.target.value})}
-                placeholder="行程標題"
-                required
-              />
-              <textarea
-                value={tripData.description}
-                onChange={(e) => setTripData({...tripData, description: e.target.value})}
-                placeholder="行程描述"
-              />
-              <input
-                type="date"
-                value={tripData.start_date}  // 改為使用 tripData 的值
-                onChange={(e) => setTripData({...tripData, start_date: e.target.value})}
-                required
-              />
-              <input
-                type="date"
-                value={tripData.end_date}    // 改為使用 tripData 的值
-                onChange={(e) => setTripData({...tripData, end_date: e.target.value})}
-                required
-              />
-              <input
-                type="text"
-                value={tripData.area}
-                onChange={(e) => setTripData({...tripData, area: e.target.value})}
-                placeholder="地區"
-                required
-              />
+              <h3>編輯行程</h3>
+              <div className="form-group">
+                <label>行程標題 *</label>
+                <input
+                  type="text"
+                  value={tripData.title}
+                  onChange={(e) => setTripData({...tripData, title: e.target.value})}
+                  placeholder="例如：東京五日遊"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>行程描述</label>
+                <textarea
+                  value={tripData.description}
+                  onChange={(e) => setTripData({...tripData, description: e.target.value})}
+                  placeholder="描述一下這趟旅程..."
+                />
+              </div>
+              <div className="form-group">
+                <label>開始日期 *</label>
+                <input
+                  type="date"
+                  value={tripData.start_date}
+                  onChange={(e) => setTripData({...tripData, start_date: e.target.value})}
+                  required
+                />
+                <small>行程的第一天</small>
+              </div>
+              <div className="form-group">
+                <label>結束日期 *</label>
+                <input
+                  type="date"
+                  value={tripData.end_date}
+                  onChange={(e) => setTripData({...tripData, end_date: e.target.value})}
+                  required
+                />
+                <small>行程的最後一天</small>
+              </div>
+              <div className="form-group">
+                <label>地區 *</label>
+                <input
+                  type="text"
+                  value={tripData.area}
+                  onChange={(e) => setTripData({...tripData, area: e.target.value})}
+                  placeholder="例如：東京、大阪"
+                  required
+                />
+              </div>
+              <div className="form-note">
+                <small>* 為必填欄位</small>
+              </div>
               <div className="button-group">
-                <button type="submit">確認</button>
+                <button type="submit">確認修改</button>
                 <button type="button" onClick={() => {
                   setEditMode(null);
                   setEditingTrip(null);

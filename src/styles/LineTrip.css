@@ -132,7 +132,8 @@
   }
   
   .trip-actions button:last-child {
-    background-color: var(--accent-color);
+    background-color: #cd5c5c;
+    color: white;
   }
   
   .trip-actions button:hover {
@@ -213,7 +214,7 @@
   }
   
   .delete-action {
-    background-color: #f44336;
+    background-color: #cd5c5c;
   }
   
   .detail-card.swiped .detail-content {
@@ -593,58 +594,83 @@
   }
   
   .trip-edit-form {
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
   
-  .trip-edit-form input,
-  .trip-edit-form textarea {
+  .trip-edit-form h3 {
+    margin: 0 0 20px 0;
+    color: var(--primary-color);
+    font-size: 1.2rem;
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #333;
+    font-weight: 500;
+  }
+  
+  .form-group small {
+    display: block;
+    margin-top: 5px;
+    color: #666;
+    font-size: 0.85rem;
+  }
+  
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
     padding: 8px;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
   }
   
-  .trip-edit-form textarea {
-    min-height: 80px;
-    resize: vertical;
+  .form-group input:focus,
+  .form-group textarea:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 139, 139, 0.1);
   }
   
-  .detail-edit-form {
-    padding: 15px;
-    background: white;
+  .form-note {
+    margin-bottom: 15px;
+    color: #666;
+    font-size: 0.85rem;
   }
   
-  .detail-edit-form .form-group {
-    margin-bottom: 10px;
+  .button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
   }
   
-  .detail-edit-form input {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
+  .button-group button {
+    flex: 1;
+    padding: 10px;
+    border: none;
     border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
   }
   
-  /* 深色模式支援 */
-  @media (prefers-color-scheme: dark) {
-    .detail-card {
-      background: #333;
-    }
-    
-    .detail-edit-form {
-      background: #333;
-    }
-    
-    .detail-edit-form input {
-      background: #424242;
-      color: white;
-      border-color: #555;
-    }
+  .button-group button[type="submit"] {
+    background-color: #008b8b;
+    color: white;
   }
-
+  
+  .button-group button[type="button"] {
+    background-color: #f5f5f5;
+    color: #333;
+  }
+  
   /* 修改按鈕顏色 */
 .add-button {
   background: #008b8b;  /* Dark Cyan */
@@ -669,13 +695,8 @@
   color: white;
 }
 
-.trip-actions button:nth-child(2) {
-  background-color: var(--primary-light);
-  color: white;
-}
-
-.trip-actions button:nth-child(3) {
-  background-color: var(--accent-color);
+.trip-actions button:last-child {
+  background-color: #cd5c5c;
   color: white;
 }
 
@@ -694,7 +715,7 @@
 }
 
 .delete-action {
-  background-color: var(--accent-color);
+  background-color: #cd5c5c;
 }
 
 /* 表單相關 */
