@@ -8,6 +8,7 @@ import Match from "./components/match";
 import Locker from "./components/locker";
 import TripDetail from './components/matchdetail';
 import LineTrip from './components/LineTrip';
+import LineTripDetail from './components/LineTripDetail';
 import LineLocker from './components/LineLocker';
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -25,6 +26,7 @@ function App() {
         <Route path="/locker" element={<Locker />} />
         <Route path="/trip-detail/:tripId" element={<TripDetail />} />
         <Route path="/linetrip" element={<LineTrip />} />
+        <Route path="/linetripdetail/:tripId" element={<LineTripDetail />} />
         <Route path="/linelocker" element={<LineLocker />} />
       </Routes>
     </Router>

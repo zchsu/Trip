@@ -1,0 +1,113 @@
+.trip-detail-container {
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .trip-detail-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 10px 0;
+    border-bottom: 2px solid var(--primary-color);
+  }
+  
+  .back-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 20px;
+  }
+  
+  .back-button:hover {
+    background-color: var(--primary-dark);
+  }
+  
+  .trip-detail-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--primary-color);
+  }
+  
+  .day-selector {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 10px 0;
+    margin-bottom: 20px;
+  }
+  
+  .day-button {
+    padding: 8px 16px;
+    border: 1px solid var(--primary-color);
+    background: white;
+    color: var(--primary-color);
+    border-radius: 20px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  
+  .day-button.active {
+    background: var(--primary-color);
+    color: white;
+  }
+  
+  .day-details {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(70, 130, 180, 0.1);
+  }
+  
+  .day-details h2 {
+    margin: 0 0 20px 0;
+    color: var(--primary-color);
+  }
+  
+  .details-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .detail-item {
+    display: flex;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid var(--primary-color);
+  }
+  
+  .time-range {
+    min-width: 120px;
+    color: var(--primary-color);
+    font-weight: bold;
+  }
+  
+  .location {
+    flex-grow: 1;
+  }
+  
+  .no-details {
+    text-align: center;
+    color: #666;
+    padding: 20px;
+  }
+  
+  /* 深色模式支援 */
+  @media (prefers-color-scheme: dark) {
+    .day-details {
+      background: #243447;
+    }
+  
+    .detail-item {
+      background: #2c4d6e;
+    }
+  
+    .day-button {
+      background: #243447;
+    }
+  }

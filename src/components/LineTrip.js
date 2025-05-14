@@ -596,18 +596,17 @@ const LineTrip = () => {
                   <span>{trip.area}</span>
                 </div>
                 <div className="trip-actions">
-                  <button onClick={() => {
-                    if (selectedTripId === trip.trip_id) {
-                      setSelectedTripId(null);
-                      setShowDetails(false);
-                    } else {
-                      setSelectedTripId(trip.trip_id);
-                      setShowDetails(true);
-                      fetchTripDetails(trip.trip_id);
+                <button onClick={() => {
+                  navigate(`/linetripdetail/${trip.trip_id}`, {
+                    state: {
+                      tripTitle: trip.title,
+                      startDate: trip.start_date,
+                      endDate: trip.end_date
                     }
-                  }}>
-                    {selectedTripId === trip.trip_id ? '收起細節' : '查看細節'}
-                  </button>
+                  });
+                }}>
+                  查看細節
+                </button>
                   <button onClick={() => {
                     setEditMode('trip');
                     setEditingTrip(trip.trip_id);
