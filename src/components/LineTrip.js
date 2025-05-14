@@ -636,12 +636,18 @@ const LineTrip = () => {
                   e.stopPropagation();
                   setEditMode('trip');
                   setEditingTrip(trip.trip_id);
+                  // 確保日期格式正確（YYYY-MM-DD）
+                  const formatDateForInput = (dateString) => {
+                    const date = new Date(dateString);
+                    return date.toISOString().split('T')[0];
+                  };
+                  
                   setTripData({
                     title: trip.title,
-                    description: trip.description,
-                    start_date: trip.start_date,
-                    end_date: trip.end_date,
-                    area: trip.area
+                    description: trip.description || '',
+                    start_date: formatDateForInput(trip.start_date),  // 格式化日期
+                    end_date: formatDateForInput(trip.end_date),      // 格式化日期
+                    area: trip.area || ''
                   });
                 }}>編輯</button>
                 <button onClick={(e) => {
