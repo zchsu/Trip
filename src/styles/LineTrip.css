@@ -552,3 +552,54 @@
       transition: none !important;
     }
   }
+  
+  .trip-edit-form {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .trip-edit-form input,
+  .trip-edit-form textarea {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  
+  .trip-edit-form textarea {
+    min-height: 80px;
+    resize: vertical;
+  }
+  
+  .detail-edit-form {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 10px;
+  }
+  
+  .edit-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  
+  .edit-buttons button {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .edit-buttons .save-button {
+    background-color: #4CAF50;
+    color: white;
+  }
+  
+  .edit-buttons .cancel-button {
+    background-color: #f5f5f5;
+    color: #333;
+  }
