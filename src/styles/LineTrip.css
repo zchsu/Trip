@@ -48,10 +48,10 @@
   }
   
   .add-button {
+    background: #008b8b;  /* Dark Cyan */
+    color: white;
     width: 100%;
     padding: 12px;
-    background: #4CAF50;
-    color: white;
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -61,7 +61,7 @@
   }
   
   .add-button:hover {
-    background: #45a049;
+    background: #006666;  /* 深一點的色調用於懸停效果 */
   }
   
   /* 行程卡片 */
@@ -378,11 +378,15 @@
     }
   
     .trip-actions {
-      flex-direction: column;
+      display: flex;
+      gap: 8px; /* 縮小間距 */
     }
   
     .trip-actions button {
-      width: 100%;
+      flex: 1;
+      padding: 10px 8px; /* 調整padding讓按鈕更緊湊 */
+      font-size: 14px;
+      white-space: nowrap; /* 防止文字換行 */
     }
   
     .detail-content {
@@ -643,11 +647,20 @@
 
   /* 修改按鈕顏色 */
 .add-button {
-  background: var(--primary-color);
+  background: #008b8b;  /* Dark Cyan */
+  color: white;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-bottom: 20px;
+  transition: background 0.3s ease;
 }
 
 .add-button:hover {
-  background: var(--primary-dark);
+  background: #006666;  /* 深一點的色調用於懸停效果 */
 }
 
 /* 行程卡片按鈕 */
