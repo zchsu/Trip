@@ -176,7 +176,23 @@ const TripDetail = () => {
     }
   };
 
-  // 處理新增行程細節
+  // 修改新增行程細節按鈕的點擊處理
+  const handleAddClick = () => {
+    // 計算選擇天數對應的日期
+    const selectedDate = new Date(startDate);
+    selectedDate.setDate(selectedDate.getDate() + selectedDay - 1);
+    const formattedDate = selectedDate.toISOString().split('T')[0];
+
+    // 預設帶入所選天的日期
+    setDetailData({
+      ...detailData,
+      date: formattedDate,
+      trip_id: tripId  // 確保有 trip_id
+    });
+    setShowAddForm(true);
+  };
+
+  // 修改新增行程細節的處理函數
   const handleAddDetail = async (e) => {
     e.preventDefault();
     try {
@@ -188,11 +204,18 @@ const TripDetail = () => {
         body: JSON.stringify(detailData)
       });
 
-      if (!response.ok) throw new Error('新增行程細節失敗');
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 400) {
+          alert(errorData.error || '新增失敗：請檢查輸入資料是否正確');
+          return;
+        }
+        throw new Error('新增行程細節失敗');
+      }
       
       setShowAddForm(false);
       setDetailData({ location: "", date: "", start_time: "", end_time: "" });
-      alert('新增成功！'); // 添加成功提示
+      alert('新增成功！');
       
       // 重新載入行程細節
       const refreshResponse = await fetch(`${process.env.REACT_APP_API_URL}/line/trip_detail/${tripId}`);
@@ -202,7 +225,7 @@ const TripDetail = () => {
       
     } catch (err) {
       setError(err.message);
-      alert(`新增失敗：${err.message}`); // 添加錯誤提示
+      alert(`新增失敗：${err.message}`);
     }
   };
 
@@ -342,11 +365,11 @@ const TripDetail = () => {
         ))}
       </div>
 
-      {/* 添加新增行程細節按鈕 */}
+      {/* 修改新增行程細節按鈕 */}
       <div className="add-detail-section">
         <button 
           className="add-detail-button"
-          onClick={() => setShowAddForm(true)}
+          onClick={handleAddClick}
         >
           新增行程細節
         </button>
@@ -376,6 +399,7 @@ const TripDetail = () => {
               max={endDate}
               required
             />
+            <small>選擇的日期必須在行程期間內</small>
           </div>
           <div className="form-group">
             <label>開始時間 *</label>
