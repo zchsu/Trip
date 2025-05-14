@@ -69,10 +69,18 @@
     background: white;
     border-radius: 10px;
     padding: 20px;
-    box-shadow: 0 4px 8px rgba(70, 130, 180, 0.2);  /* 加深陰影 */
+    margin-bottom: 15px;
+    box-shadow: 0 4px 8px rgba(70, 130, 180, 0.2);
     transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
+  }
+  
+  .trip-content {
+    cursor: pointer;
+    padding-bottom: 15px;
+  }
+  
+  .trip-content:hover {
+    opacity: 0.8;
   }
   
   .trip-card:hover {
@@ -104,38 +112,31 @@
   .trip-actions {
     display: flex;
     gap: 10px;
-    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
   }
   
   .trip-actions button {
+    flex: 1;
     padding: 8px 16px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
-    background-color: #f5f5f5;
-    color: #333;
-  }
-  
-  .trip-actions button:first-child {  /* 查看細節按鈕 */
-    flex: 2;  /* 佔用更多空間 */
-    background-color: #4CAF50;
     color: white;
+    transition: background-color 0.3s ease;
   }
   
-  .trip-actions button:nth-child(2),  /* 編輯按鈕 */
-  .trip-actions button:nth-child(3) { /* 刪除按鈕 */
-    flex: 1;
+  .trip-actions button:first-child {
+    background-color: var(--primary-color);
   }
   
-  .trip-actions button:nth-child(2) {
-    background-color: #2196F3;
-    color: white;
+  .trip-actions button:last-child {
+    background-color: var(--accent-color);
   }
   
-  .trip-actions button:nth-child(3) {
-    background-color: #f44336;
-    color: white;
+  .trip-actions button:hover {
+    opacity: 0.9;
   }
   
   /* 行程細節容器新樣式 */

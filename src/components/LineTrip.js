@@ -542,51 +542,65 @@ const LineTrip = () => {
         新增行程
       </button>
       {trips.map((trip) => (
-        <div key={trip.trip_id}>
-          <div className="trip-card">
-            {editMode === 'trip' && editingTrip === trip.trip_id ? (
-              <form onSubmit={(e) => handleUpdateTrip(e, trip.trip_id)} className="trip-edit-form">
-                <input
-                  type="text"
-                  value={tripData.title}
-                  onChange={(e) => setTripData({...tripData, title: e.target.value})}
-                  placeholder="行程標題"
-                  required
-                />
-                <textarea
-                  value={tripData.description}
-                  onChange={(e) => setTripData({...tripData, description: e.target.value})}
-                  placeholder="行程描述"
-                />
-                <input
-                  type="date"
-                  value={tripData.start_date}  // 改為使用 tripData 的值
-                  onChange={(e) => setTripData({...tripData, start_date: e.target.value})}
-                  required
-                />
-                <input
-                  type="date"
-                  value={tripData.end_date}    // 改為使用 tripData 的值
-                  onChange={(e) => setTripData({...tripData, end_date: e.target.value})}
-                  required
-                />
-                <input
-                  type="text"
-                  value={tripData.area}
-                  onChange={(e) => setTripData({...tripData, area: e.target.value})}
-                  placeholder="地區"
-                  required
-                />
-                <div className="button-group">
-                  <button type="submit">確認</button>
-                  <button type="button" onClick={() => {
-                    setEditMode(null);
-                    setEditingTrip(null);
-                  }}>取消</button>
-                </div>
-              </form>
-            ) : (
-              <>
+        <div 
+          key={trip.trip_id}
+          className="trip-card"
+        >
+          {editMode === 'trip' && editingTrip === trip.trip_id ? (
+            <form onSubmit={(e) => handleUpdateTrip(e, trip.trip_id)} className="trip-edit-form">
+              <input
+                type="text"
+                value={tripData.title}
+                onChange={(e) => setTripData({...tripData, title: e.target.value})}
+                placeholder="行程標題"
+                required
+              />
+              <textarea
+                value={tripData.description}
+                onChange={(e) => setTripData({...tripData, description: e.target.value})}
+                placeholder="行程描述"
+              />
+              <input
+                type="date"
+                value={tripData.start_date}  // 改為使用 tripData 的值
+                onChange={(e) => setTripData({...tripData, start_date: e.target.value})}
+                required
+              />
+              <input
+                type="date"
+                value={tripData.end_date}    // 改為使用 tripData 的值
+                onChange={(e) => setTripData({...tripData, end_date: e.target.value})}
+                required
+              />
+              <input
+                type="text"
+                value={tripData.area}
+                onChange={(e) => setTripData({...tripData, area: e.target.value})}
+                placeholder="地區"
+                required
+              />
+              <div className="button-group">
+                <button type="submit">確認</button>
+                <button type="button" onClick={() => {
+                  setEditMode(null);
+                  setEditingTrip(null);
+                }}>取消</button>
+              </div>
+            </form>
+          ) : (
+            <>
+              <div 
+                className="trip-content"
+                onClick={() => {
+                  navigate(`/linetripdetail/${trip.trip_id}`, {
+                    state: {
+                      tripTitle: trip.title,
+                      startDate: trip.start_date,
+                      endDate: trip.end_date
+                    }
+                  });
+                }}
+              >
                 <h3>{trip.title}</h3>
                 <p>{trip.description}</p>
                 <div className="trip-info">
@@ -595,121 +609,27 @@ const LineTrip = () => {
                   </span>
                   <span>{trip.area}</span>
                 </div>
-                <div className="trip-actions">
-                <button onClick={() => {
-                  navigate(`/linetripdetail/${trip.trip_id}`, {
-                    state: {
-                      tripTitle: trip.title,
-                      startDate: trip.start_date,
-                      endDate: trip.end_date
-                    }
-                  });
-                }}>
-                  查看細節
-                </button>
-                  <button onClick={() => {
-                    setEditMode('trip');
-                    setEditingTrip(trip.trip_id);
-                    setTripData({
-                      title: trip.title,
-                      description: trip.description,
-                      start_date: trip.start_date,
-                      end_date: trip.end_date,
-                      area: trip.area
-                    });
-                  }}>編輯</button>
-                  <button onClick={() => handleDeleteTrip(trip.trip_id)}>刪除</button>
-                </div>
-              </>
-            )}
-          </div>
-          <div className={`trip-details-container ${selectedTripId === trip.trip_id && showDetails ? 'show' : ''}`}>
-            <div className="details-header">
-              <h3>行程細節</h3>
-              {detailMode === 'view' && (
-                <button 
-                  onClick={() => setDetailMode('add')} 
-                  className="add-detail-button"
-                >
-                  新增細節
-                </button>
-              )}
-            </div>
-            
-            {detailMode === 'add' && selectedTripId === trip.trip_id && (
-              <div className="details-content">
-                <form onSubmit={handleAddDetail} className="detail-form">
-                  <div className="form-group">
-                    <label htmlFor="location">地點 *</label>
-                    <input
-                      id="location"
-                      type="text"
-                      value={detailData.location}
-                      onChange={(e) => setDetailData({...detailData, location: e.target.value})}
-                      required
-                      placeholder="請輸入地點"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="date">日期 *</label>
-                    <input
-                      id="date"
-                      type="date"
-                      value={detailData.date}
-                      onChange={(e) => setDetailData({...detailData, date: e.target.value})}
-                      required
-                      min={tripData.start_date}
-                      max={tripData.end_date}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="start_time">開始時間 *</label>
-                    <input
-                      id="start_time"
-                      type="time"
-                      value={detailData.start_time}
-                      onChange={(e) => setDetailData({...detailData, start_time: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="end_time">結束時間 *</label>
-                    <input
-                      id="end_time"
-                      type="time"
-                      value={detailData.end_time}
-                      onChange={(e) => setDetailData({...detailData, end_time: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="button-group">
-                    <button type="submit" className="submit-button">確認新增</button>
-                    <button 
-                      type="button" 
-                      className="cancel-button"
-                      onClick={() => {
-                        setDetailMode('view');
-                        setDetailData({
-                          location: "",
-                          date: "",
-                          start_time: "",
-                          end_time: "",
-                        });
-                      }}
-                    >
-                      取消
-                    </button>
-                  </div>
-                </form>
               </div>
-            )}
-            
-            {selectedTripId === trip.trip_id && Array.isArray(tripDetails) && tripDetails.length > 0 ? (
-              renderTripDetails(tripDetails)
-            ) : (
-              <p className="no-details">尚未新增行程細節</p>
-            )}
-          </div>
+              <div className="trip-actions">
+                <button onClick={(e) => {
+                  e.stopPropagation();
+                  setEditMode('trip');
+                  setEditingTrip(trip.trip_id);
+                  setTripData({
+                    title: trip.title,
+                    description: trip.description,
+                    start_date: trip.start_date,
+                    end_date: trip.end_date,
+                    area: trip.area
+                  });
+                }}>編輯</button>
+                <button onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteTrip(trip.trip_id);
+                }}>刪除</button>
+              </div>
+            </>
+          )}
         </div>
       ))}
     </div>
