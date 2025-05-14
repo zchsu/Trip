@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { differenceInDays, addDays, format } from 'date-fns';
 import "../styles/LineTripDetail.css";
 
 const TripDetail = () => {
@@ -13,11 +12,14 @@ const TripDetail = () => {
   const [error, setError] = useState(null);
 
   const { tripTitle, startDate, endDate } = location.state || {};
-  const totalDays = differenceInDays(new Date(endDate), new Date(startDate)) + 1;
+  // 計算總天數
+  const totalDays = Math.floor((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) + 1;
 
   // 獲取指定日期的行程細節
   const getDayDetails = (day) => {
-    const targetDate = format(addDays(new Date(startDate), day - 1), 'yyyy-MM-dd');
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + day - 1);
+    const targetDate = date.toISOString().split('T')[0];
     return tripDetails.filter(detail => detail.date === targetDate);
   };
 
