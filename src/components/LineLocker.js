@@ -75,8 +75,18 @@ const LineLocker = () => {
         isLocation: 'false'
       });
 
-      // 導向 ecbo 網站
-      window.open(`https://cloak.ecbo.io/zh-TW/locations?${params.toString()}`, '_blank');
+      const url = `https://cloak.ecbo.io/zh-TW/locations?${params.toString()}`;
+
+    // 判斷是否在行動裝置
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      // 行動裝置使用 location.href
+      window.location.href = url;
+    } else {
+      // 桌面版使用新分頁
+      window.open(url, '_blank');
+    }
 
     } catch (error) {
       setError(error.message);
