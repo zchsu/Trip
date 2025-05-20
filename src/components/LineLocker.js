@@ -40,13 +40,24 @@ const LineLocker = () => {
         throw new Error('請選擇結束時間');
       }
 
-      // 使用 geopy 獲取經緯度
-      const geolocator = new window.Nominatim();
-      const location = await geolocator.geocode(searchParams.location);
+      setLoading(true);
+
+      // 使用 OpenStreetMap Nominatim API
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchParams.location)}&limit=1`
+      );
       
-      if (!location) {
+      if (!response.ok) {
+        throw new Error('地點搜尋失敗');
+      }
+
+      const data = await response.json();
+      
+      if (!data || data.length === 0) {
         throw new Error('無法解析該地點名稱');
       }
+
+      const location = data[0];
 
       // 組合 URL
       const params = new URLSearchParams({
@@ -70,6 +81,8 @@ const LineLocker = () => {
     } catch (error) {
       setError(error.message);
       console.error('搜尋失敗:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
