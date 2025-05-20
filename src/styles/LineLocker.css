@@ -1,205 +1,298 @@
+/* 重設基本樣式 */
 .line-locker-container {
-    padding: 15px;
-    max-width: 600px;
-    margin: 0 auto;
+  padding: 0;
+  margin: 0;
+  background: var(--secondary-color);
+  min-height: 100vh;
+}
+
+/* 炫酷 Header 設計 */
+.locker-header {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+  padding: 40px 20px 60px;
+  position: relative;
+  overflow: hidden;
+}
+
+.header-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  color: white;
+}
+
+.header-content h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+  animation: slideDown 0.5s ease-out;
+}
+
+.header-content p {
+  margin: 10px 0 0;
+  font-size: 16px;
+  opacity: 0.9;
+  animation: fadeIn 0.5s ease-out 0.3s both;
+}
+
+/* 波浪效果 */
+.header-wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 40px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23fff' fill-opacity='1' d='M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1152,160C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+  background-size: cover;
+  transform: translateY(1px);
+}
+
+/* 表單區域改進 */
+.search-form {
+  background: white;
+  border-radius: 20px;
+  margin: -30px 15px 20px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  position: relative;
+  z-index: 3;
+  animation: slideUp 0.5s ease-out;
+}
+
+/* 輸入框美化 */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #333;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 8px;
+  border: 2px solid var(--secondary-color);
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-light);
+  outline: none;
+}
+
+/* 時間選擇器改進 */
+.time-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.time-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.time-group span {
+  min-width: 70px;
+  font-size: 14px;
+}
+
+.time-group select {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+}
+
+/* 行李數量控制 */
+.baggage-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.baggage-counter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.counter-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.counter-controls button {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 4px;
+  background: #f0f0f0;
+  cursor: pointer;
+}
+
+.counter-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 按鈕樣式改進 */
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.search-button,
+.reset-button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.search-button {
+  background: var(--primary-color);
+  color: white;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.search-button:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.reset-button {
+  background: var(--secondary-color);
+  color: var(--accent-color);
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.reset-button:hover {
+  background: var(--primary-light);
+  color: white;
+}
+
+/* 錯誤訊息樣式 */
+.error-message {
+  color: #f44336;
+  margin: 10px 0;
+  font-size: 14px;
+}
+
+/* 儲物櫃卡片樣式 */
+.locker-card {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.locker-image img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.locker-info {
+  padding: 15px;
+}
+
+.locker-info h3 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+}
+
+.rating {
+  color: #ffd700;
+  margin: 5px 0;
+}
+
+.price-info {
+  margin: 10px 0;
+  font-size: 14px;
+}
+
+.price-info p {
+  margin: 5px 0;
+}
+
+.locker-info a {
+  display: inline-block;
+  padding: 8px 16px;
+  background: #2196F3;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  margin-top: 10px;
+}
+
+/* 動畫效果 */
+@keyframes slideDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
   }
-  
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 深色模式適配 */
+@media (prefers-color-scheme: dark) {
   .search-form {
-    background: white;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  }
-  
-  .form-group {
-    margin-bottom: 15px;
-  }
-  
-  .form-group label {
-    display: block;
-    margin-bottom: 5px;
-    color: #333;
-    font-weight: 500;
-  }
-  
-  .form-group input,
-  .form-group select {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-  }
-  
-  .time-inputs {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-  
-  .time-inputs select {
-    width: auto;
-  }
-  
-  .baggage-inputs {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .baggage-counter {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  .counter-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  
-  .counter-controls button {
-    width: 30px;
-    height: 30px;
-    border: none;
-    border-radius: 4px;
-    background: #f0f0f0;
-    cursor: pointer;
-  }
-  
-  .counter-controls button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  
-  .button-group {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
-  }
-  
-  .search-button,
-  .reset-button {
-    flex: 1;
-    padding: 10px;
-    border: none;
-    border-radius: 4px;
-    font-size: 14px;
-    cursor: pointer;
-  }
-  
-  .search-button {
-    background: #4CAF50;
-    color: white;
-  }
-  
-  .reset-button {
-    background: #f5f5f5;
-    color: #333;
-  }
-  
-  .error-message {
-    color: #f44336;
-    margin: 10px 0;
-    font-size: 14px;
-  }
-  
-  .locker-card {
-    background: white;
-    border-radius: 8px;
-    overflow: hidden;
-    margin-bottom: 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  }
-  
-  .locker-image img {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-  }
-  
-  .locker-info {
-    padding: 15px;
-  }
-  
-  .locker-info h3 {
-    margin: 0 0 10px 0;
-    font-size: 16px;
-  }
-  
-  .rating {
-    color: #ffd700;
-    margin: 5px 0;
-  }
-  
-  .price-info {
-    margin: 10px 0;
-    font-size: 14px;
-  }
-  
-  .price-info p {
-    margin: 5px 0;
-  }
-  
-  .locker-info a {
-    display: inline-block;
-    padding: 8px 16px;
-    background: #2196F3;
-    color: white;
-    text-decoration: none;
-    border-radius: 4px;
-    margin-top: 10px;
-  }
-  
-  .time-inputs {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .time-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  .time-group span {
-    min-width: 70px;
-    font-size: 14px;
-  }
-  
-  .time-group select {
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background: white;
+    background: var(--accent-color);
   }
 
-  /* 深色模式支援 */
-  @media (prefers-color-scheme: dark) {
-    .search-form,
-    .locker-card {
-      background: #333;
-      color: white;
-    }
-  
-    .form-group input,
-    .form-group select,
-    .counter-controls button {
-      background: #424242;
-      color: white;
-      border-color: #555;
-    }
-  
-    .reset-button {
-      background: #424242;
-      color: white;
-    }
-    .time-group select {
-      background: #424242;
-      color: white;
-      border-color: #555;
-    }
+  .form-group input,
+  .form-group select {
+    background: var(--primary-dark);
+    color: white;
+    border-color: var(--primary-light);
   }
+
+  .form-group label {
+    color: white;
+  }
+}

@@ -131,6 +131,14 @@ const LineLocker = () => {
 
   return (
     <div className="line-locker-container">
+      <header className="locker-header">
+        <div className="header-content">
+          <h1>寄物點查找</h1>
+          <p>尋找最方便的行李寄存點</p>
+          <div className="header-wave"></div>
+        </div>
+      </header>
+
       <div className="search-form">
         <div className="form-group">
           <label>地點</label>
