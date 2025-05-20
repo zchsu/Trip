@@ -25,9 +25,6 @@ const LineLocker = () => {
   const minutes = ['00', '15', '30', '45'];
 
   const handleSearch = async () => {
-    setLoading(true);
-    setError(null);
-    
     try {
       // 驗證輸入
       if (!searchParams.location) {
@@ -43,38 +40,36 @@ const LineLocker = () => {
         throw new Error('請選擇結束時間');
       }
 
-      const searchData = {
-        location: searchParams.location,
-        startDate: searchParams.startDate,
-        endDate: searchParams.endDate || searchParams.startDate,
-        startTimeHour: searchParams.startTimeHour,
-        startTimeMin: searchParams.startTimeMin,
-        endTimeHour: searchParams.endTimeHour,
-        endTimeMin: searchParams.endTimeMin,
-        bagSize: searchParams.bagSize,
-        suitcaseSize: searchParams.suitcaseSize
-      };
-
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/search-lockers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(searchData)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || '搜尋失敗，請稍後再試');
+      // 使用 geopy 獲取經緯度
+      const geolocator = new window.Nominatim();
+      const location = await geolocator.geocode(searchParams.location);
+      
+      if (!location) {
+        throw new Error('無法解析該地點名稱');
       }
 
-      const data = await response.json();
-      setSearchResults(data.results);
+      // 組合 URL
+      const params = new URLSearchParams({
+        name: searchParams.location,
+        startDate: searchParams.startDate,
+        endDate: searchParams.endDate || searchParams.startDate,
+        startDateTimeHour: searchParams.startTimeHour,
+        startDateTimeMin: searchParams.startTimeMin,
+        endDateTimeHour: searchParams.endTimeHour,
+        endDateTimeMin: searchParams.endTimeMin,
+        bagSize: searchParams.bagSize,
+        suitcaseSize: searchParams.suitcaseSize,
+        lat: location.lat,
+        lon: location.lon,
+        isLocation: 'false'
+      });
+
+      // 導向 ecbo 網站
+      window.open(`https://cloak.ecbo.io/zh-TW/locations?${params.toString()}`, '_blank');
+
     } catch (error) {
       setError(error.message);
       console.error('搜尋失敗:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
