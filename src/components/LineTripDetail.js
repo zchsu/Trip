@@ -17,13 +17,8 @@ const TripDetail = () => {
     start_time: "",
     end_time: ""
   });
-  const [swipedDetailId, setSwipedDetailId] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [currentX, setCurrentX] = useState(0);
   const [showAddForm, setShowAddForm] = useState(false);
-  const touchStartX = useRef(0);
-  const touchStartY = useRef(0);
+  const [slideStates, setSlideStates] = useState(new Map());
   const swipeThreshold = 50;
 
   const { tripTitle, startDate, endDate } = location.state || {};
@@ -59,66 +54,48 @@ const TripDetail = () => {
   if (isLoading) return <div className="loading">載入中...</div>;
   if (error) return <div className="error">{error}</div>;
 
-  // 修改觸控處理函數
+  // 修改滑動相關處理函數
   const handleTouchStart = (e, detailId) => {
-    setIsDragging(true);
-    setStartX(e.touches[0].clientX);
-    setCurrentX(0);
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
+    e.stopPropagation();
+    const touchX = e.touches[0].clientX;
+    setSlideStates(prev => new Map(prev).set(detailId, {
+      isDragging: true,
+      startX: touchX,
+      currentX: prev.get(detailId)?.currentX || 0,
+      touchStartX: touchX
+    }));
   };
 
   const handleTouchMove = (e, detailId) => {
-    if (!isDragging) return;
+    e.stopPropagation();
+    const state = slideStates.get(detailId);
+    if (!state?.isDragging) return;
 
-    const touchEndX = e.touches[0].clientX;
-    const touchEndY = e.touches[0].clientY;
-    const deltaX = touchStartX.current - touchEndX;
-    const deltaY = touchStartY.current - touchEndY;
+    const touchX = e.touches[0].clientX;
+    const deltaX = state.touchStartX - touchX;
+    let newX = Math.max(0, Math.min(120, deltaX));
 
-    // 確保是水平滑動
-    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      e.preventDefault();
-      const diff = startX - touchEndX;
-      setCurrentX(diff);
-
-      // 限制滑動範圍
-      if (diff > 120) {
-        setCurrentX(120);
-      } else if (diff < 0) {
-        setCurrentX(0);
-      }
-
-      // 根據滑動距離設置 swipedDetailId
-      if (diff > swipeThreshold) {
-        setSwipedDetailId(detailId);
-      } else {
-        setSwipedDetailId(null);
-      }
-    }
+    setSlideStates(prev => new Map(prev).set(detailId, {
+      ...state,
+      currentX: newX
+    }));
   };
 
   const handleTouchEnd = (detailId) => {
-    setIsDragging(false);
-    
-    // 如果滑動距離大於閾值，保持展開狀態
-    if (currentX > swipeThreshold) {
-      setCurrentX(120);
-      setSwipedDetailId(detailId);
-    } else {
-      setCurrentX(0);
-      setSwipedDetailId(null);
-    }
-    
-    touchStartX.current = 0;
-    touchStartY.current = 0;
+    const state = slideStates.get(detailId);
+    if (!state) return;
+
+    const finalX = state.currentX > swipeThreshold ? 120 : 0;
+    setSlideStates(prev => new Map(prev).set(detailId, {
+      ...state,
+      isDragging: false,
+      currentX: finalX
+    }));
   };
 
-  // 添加點擊背景關閉滑動選單
+  // 處理點擊背景關閉所有滑動選單
   const handleBackgroundClick = () => {
-    if (swipedDetailId) {
-      setSwipedDetailId(null);
-    }
+    setSlideStates(new Map());
   };
 
   // 處理更新行程細節
@@ -161,7 +138,7 @@ const TripDetail = () => {
         if (!response.ok) throw new Error('刪除行程細節失敗');
         
         alert('刪除成功！'); // 添加成功提示
-        setSwipedDetailId(null); // 重置滑動狀態
+        setSlideStates(new Map()); // 重置滑動狀態
         
         // 重新載入行程細節
         const refreshResponse = await fetch(`${process.env.REACT_APP_API_URL}/line/trip_detail/${tripId}`);
@@ -229,120 +206,121 @@ const TripDetail = () => {
     }
   };
 
-  // 修改渲染行程細節的部分
-  const renderDetailItem = (detail) => (
-    <div 
-      key={detail.detail_id}
-      data-detail-id={detail.detail_id}
-      className={`detail-item`}
-      onTouchStart={(e) => handleTouchStart(e, detail.detail_id)}
-      onTouchMove={(e) => handleTouchMove(e, detail.detail_id)}
-      onTouchEnd={() => handleTouchEnd(detail.detail_id)}
-      style={{
-        touchAction: 'pan-y pinch-zoom'
-      }}
-    >
+  // 渲染行程細節項目
+  const renderDetailItem = (detail) => {
+    const slideState = slideStates.get(detail.detail_id) || {
+      currentX: 0,
+      isDragging: false
+    };
+
+    return (
       <div 
-        className="detail-content"
-        style={{
-          transform: swipedDetailId === detail.detail_id 
-            ? `translateX(-120px)` 
-            : `translateX(-${currentX}px)`
-        }}
+        key={detail.detail_id}
+        className="detail-item"
+        onTouchStart={(e) => handleTouchStart(e, detail.detail_id)}
+        onTouchMove={(e) => handleTouchMove(e, detail.detail_id)}
+        onTouchEnd={() => handleTouchEnd(detail.detail_id)}
       >
-        {editingDetail === detail.detail_id ? (
-          <form onSubmit={(e) => handleUpdateDetail(e, detail.detail_id)} className="detail-edit-form">
-            <div className="form-group">
-              <label>地點</label>
-              <input
-                type="text"
-                value={detailData.location}
-                onChange={(e) => setDetailData({...detailData, location: e.target.value})}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>日期</label>
-              <input
-                type="date"
-                value={detailData.date}
-                onChange={(e) => setDetailData({...detailData, date: e.target.value})}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>開始時間</label>
-              <input
-                type="time"
-                value={detailData.start_time}
-                onChange={(e) => setDetailData({...detailData, start_time: e.target.value})}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>結束時間</label>
-              <input
-                type="time"
-                value={detailData.end_time}
-                onChange={(e) => setDetailData({...detailData, end_time: e.target.value})}
-                required
-              />
-            </div>
-            <div className="button-group">
-              <button type="submit">確認</button>
-              <button type="button" onClick={() => setEditingDetail(null)}>取消</button>
-            </div>
-          </form>
-        ) : (
-          <>
-            <div className="time-range">
-              {detail.start_time} - {detail.end_time}
-            </div>
-            <div className="location">
-              {detail.location}
-            </div>
-          </>
-        )}
+        <div 
+          className="detail-content"
+          style={{
+            transform: `translateX(-${slideState.currentX}px)`,
+            transition: slideState.isDragging ? 'none' : 'transform 0.3s ease'
+          }}
+        >
+          {editingDetail === detail.detail_id ? (
+            <form onSubmit={(e) => handleUpdateDetail(e, detail.detail_id)} className="detail-edit-form">
+              <div className="form-group">
+                <label>地點</label>
+                <input
+                  type="text"
+                  value={detailData.location}
+                  onChange={(e) => setDetailData({...detailData, location: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>日期</label>
+                <input
+                  type="date"
+                  value={detailData.date}
+                  onChange={(e) => setDetailData({...detailData, date: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>開始時間</label>
+                <input
+                  type="time"
+                  value={detailData.start_time}
+                  onChange={(e) => setDetailData({...detailData, start_time: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>結束時間</label>
+                <input
+                  type="time"
+                  value={detailData.end_time}
+                  onChange={(e) => setDetailData({...detailData, end_time: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="button-group">
+                <button type="submit">確認</button>
+                <button type="button" onClick={() => setEditingDetail(null)}>取消</button>
+              </div>
+            </form>
+          ) : (
+            <>
+              <div className="time-range">
+                {detail.start_time} - {detail.end_time}
+              </div>
+              <div className="location">
+                {detail.location}
+              </div>
+            </>
+          )}
+        </div>
+        <div 
+          className="action-buttons"
+          style={{
+            transform: `translateX(${120 - slideState.currentX}px)`,
+            transition: slideState.isDragging ? 'none' : 'transform 0.3s ease'
+          }}
+        >
+          {editingDetail !== detail.detail_id && (
+            <>
+              <button 
+                className="edit-action"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditingDetail(detail.detail_id);
+                  setDetailData({
+                    location: detail.location,
+                    date: detail.date,
+                    start_time: detail.start_time,
+                    end_time: detail.end_time
+                  });
+                }}
+              >
+                編輯
+              </button>
+              <button 
+                className="delete-action"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteDetail(detail.detail_id);
+                }}
+              >
+                刪除
+              </button>
+            </>
+          )}
+        </div>
       </div>
-      <div 
-        className="action-buttons"
-        style={{
-          transform: swipedDetailId === detail.detail_id 
-            ? 'translateX(0)' 
-            : `translateX(${120 - currentX}px)`
-        }}
-      >
-        {editingDetail !== detail.detail_id && (
-          <>
-            <button 
-              className="edit-action"
-              onClick={(e) => {
-                e.stopPropagation();
-                setEditingDetail(detail.detail_id);
-                setDetailData({
-                  location: detail.location,
-                  date: detail.date,
-                  start_time: detail.start_time,
-                  end_time: detail.end_time
-                });
-              }}
-            >
-              編輯
-            </button>
-            <button 
-              className="delete-action"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDeleteDetail(detail.detail_id);
-              }}
-            >
-              刪除
-            </button>
-          </>
-        )}
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="trip-detail-container">
