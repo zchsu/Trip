@@ -411,18 +411,73 @@ const LineTrip = () => {
     });
   };
 
-  const handleShareTrip = async (tripId) => {
+  const handleShareTrip = async (tripId, trip) => {
     try {
-      // 使用 LIFF 的分享功能
       if (window.liff) {
-        const url = `${window.location.origin}/linetripdetail/${tripId}`;
+        const url = `${window.location.origin}/linetrip`;  // 導向主行程頁面
         await liff.shareTargetPicker([
           {
-            type: "text",
-            text: `查看我的行程：${url}`
+            type: "flex",
+            altText: "分享行程",
+            contents: {
+              type: "bubble",
+              body: {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                  {
+                    type: "text",
+                    text: `${trip.title}`,
+                    weight: "bold",
+                    size: "xl"
+                  },
+                  {
+                    type: "text",
+                    text: `${formatDate(trip.start_date)} - ${formatDate(trip.end_date)}`,
+                    size: "sm",
+                    color: "#999999"
+                  },
+                  {
+                    type: "text",
+                    text: trip.area,
+                    size: "sm",
+                    color: "#999999"
+                  }
+                ]
+              },
+              footer: {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                  {
+                    type: "button",
+                    action: {
+                      type: "uri",
+                      label: "查看並編輯行程",
+                      uri: url
+                    },
+                    style: "primary"
+                  }
+                ]
+              }
+            }
           }
         ]);
-        alert('分享連結已發送！');
+  
+        // 自動添加共同編輯權限
+        await fetch(`${process.env.REACT_APP_API_URL}/line/trip/share`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            trip_id: tripId,
+            shared_with_user_id: window.liff.getDecodedIDToken().sub,
+            permission_type: 'edit'
+          })
+        });
+  
+        alert('分享成功！對方可以查看並編輯行程。');
       }
     } catch (error) {
       console.error('分享失敗:', error);

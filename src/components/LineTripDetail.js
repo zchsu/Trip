@@ -54,14 +54,21 @@ const TripDetail = () => {
         const response = await fetch(`${process.env.REACT_APP_API_URL}/line/trip-permission/${tripId}`);
         const data = await response.json();
         setHasEditPermission(data.permission === 'edit' || data.isOwner);
+        
+        // 如果沒有權限，顯示提示
+        if (!data.permission && !data.isOwner) {
+          alert('您沒有權限查看此行程，請聯繫行程擁有者獲取權限。');
+          navigate('/linetrip');  // 導回主頁面
+        }
       } catch (error) {
         console.error('檢查權限失敗:', error);
+        setError('無法驗證訪問權限');
       }
     };
 
     fetchTripDetails();
     checkPermission();
-  }, [tripId]);
+  }, [tripId, navigate]);
 
   if (isLoading) return <div className="loading">載入中...</div>;
   if (error) return <div className="error">{error}</div>;
