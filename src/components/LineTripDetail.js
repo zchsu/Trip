@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import liff from '@line/liff';
 import "../styles/LineTripDetail.css";
 
 const TripDetail = () => {
@@ -35,6 +36,45 @@ const TripDetail = () => {
   };
 
   useEffect(() => {
+    const initializeLiff = async () => {
+      try {
+        await liff.init({
+          liffId: process.env.REACT_APP_LIFF_ID
+        });
+        if (!liff.isLoggedIn()) {
+          liff.login();
+        }
+      } catch (error) {
+        console.error('LIFF 初始化失敗:', error);
+        setError('LIFF 初始化失敗');
+      }
+    };
+  
+    const checkPermission = async () => {
+      try {
+        await initializeLiff();  // 確保 LIFF 已初始化
+        
+        const user = await liff.getDecodedIDToken();
+        const userId = user.sub;
+  
+        const response = await fetch(
+          `${process.env.REACT_APP_API_URL}/line/trip-permission/${tripId}?user_id=${userId}`
+        );
+        const data = await response.json();
+        
+        if (!data.permission && !data.isOwner) {
+          alert('您沒有權限查看此行程，請聯繫行程擁有者獲取權限。');
+          navigate('/linetrip');
+          return;
+        }
+        
+        setHasEditPermission(data.permission === 'edit' || data.isOwner);
+      } catch (error) {
+        console.error('檢查權限失敗:', error);
+        setError('無法驗證訪問權限');
+      }
+    };
+  
     const fetchTripDetails = async () => {
       setIsLoading(true);
       try {
@@ -48,26 +88,9 @@ const TripDetail = () => {
         setIsLoading(false);
       }
     };
-
-    const checkPermission = async () => {
-      try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/line/trip-permission/${tripId}`);
-        const data = await response.json();
-        setHasEditPermission(data.permission === 'edit' || data.isOwner);
-        
-        // 如果沒有權限，顯示提示
-        if (!data.permission && !data.isOwner) {
-          alert('您沒有權限查看此行程，請聯繫行程擁有者獲取權限。');
-          navigate('/linetrip');  // 導回主頁面
-        }
-      } catch (error) {
-        console.error('檢查權限失敗:', error);
-        setError('無法驗證訪問權限');
-      }
-    };
-
-    fetchTripDetails();
+  
     checkPermission();
+    fetchTripDetails();
   }, [tripId, navigate]);
 
   if (isLoading) return <div className="loading">載入中...</div>;

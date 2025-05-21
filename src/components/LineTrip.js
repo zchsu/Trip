@@ -413,14 +413,33 @@ const LineTrip = () => {
 
   const handleShareTrip = async (tripId, trip) => {
     try {
-      // 檢查參數
-      if (!tripId || !trip) {
-        throw new Error('無效的行程資料');
+      if (!window.liff) {
+        throw new Error('LIFF 未初始化');
       }
   
-      if (window.liff) {
-        // 組合分享訊息
-        const flexMessage = {
+      const user = await liff.getDecodedIDToken();
+      const sharedUserId = user.sub;
+  
+      // 先建立分享權限
+      const shareResponse = await fetch(`${process.env.REACT_APP_API_URL}/line/trip/share`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          trip_id: tripId,
+          shared_user_id: sharedUserId,
+          permission_type: 'edit'
+        })
+      });
+  
+      if (!shareResponse.ok) {
+        throw new Error('設定分享權限失敗');
+      }
+  
+      // 分享訊息
+      const result = await liff.shareTargetPicker([
+        {
           type: "flex",
           altText: `分享行程：${trip.title}`,
           contents: {
@@ -431,21 +450,13 @@ const LineTrip = () => {
               contents: [
                 {
                   type: "text",
-                  text: trip.title || '未命名行程',
+                  text: trip.title,
                   weight: "bold",
                   size: "xl"
                 },
                 {
                   type: "text",
-                  text: trip.start_date && trip.end_date ? 
-                    `${formatDate(trip.start_date)} - ${formatDate(trip.end_date)}` : 
-                    '日期未設定',
-                  size: "sm",
-                  color: "#999999"
-                },
-                {
-                  type: "text",
-                  text: trip.area || '地區未設定',
+                  text: `${formatDate(trip.start_date)} - ${formatDate(trip.end_date)}`,
                   size: "sm",
                   color: "#999999"
                 }
@@ -467,29 +478,11 @@ const LineTrip = () => {
               ]
             }
           }
-        };
-  
-        // 分享訊息
-        const result = await liff.shareTargetPicker([flexMessage]);
-        
-        if (result) {
-          // 分享成功，添加共同編輯權限
-          await fetch(`${process.env.REACT_APP_API_URL}/line/trip/share`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              trip_id: tripId,
-              shared_with_user_id: window.liff.getDecodedIDToken().sub,
-              permission_type: 'edit'
-            })
-          });
-  
-          alert('分享成功！對方可以查看並編輯行程。');
         }
-      } else {
-        throw new Error('LIFF 尚未初始化');
+      ]);
+  
+      if (result) {
+        alert('分享成功！對方可以查看並編輯行程。');
       }
     } catch (error) {
       console.error('分享失敗:', error);
