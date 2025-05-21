@@ -81,9 +81,42 @@ const LineTrip = () => {
   };
 
   useEffect(() => {
-    console.log("Component mounted");
-    initializeLiff();
-  }, []);
+    const handleSharedTrip = async () => {
+      try {
+        // 從 URL 獲取分享的行程 ID
+        const urlParams = new URLSearchParams(window.location.search);
+        const sharedTripId = urlParams.get('shared_trip_id');
+  
+        if (sharedTripId && userProfile) {
+          // 當有分享的行程 ID 且用戶已登入時，添加協作者關係
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/line/trip/share`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              trip_id: sharedTripId,
+              shared_user_id: userProfile.userId
+            })
+          });
+  
+          if (!response.ok) {
+            throw new Error('無法加入共享行程');
+          }
+  
+          // 重新獲取行程列表
+          await fetchTrips(userProfile.userId);
+        }
+      } catch (error) {
+        console.error('處理共享行程失敗:', error);
+        setError(error.message);
+      }
+    };
+  
+    if (userProfile) {
+      handleSharedTrip();
+    }
+  }, [userProfile]);
 
   const initializeLiff = async () => {
     try {
@@ -417,10 +450,7 @@ const LineTrip = () => {
         throw new Error('LIFF 未初始化');
       }
   
-      // 先取得當前用戶資料
-      const currentUser = await liff.getProfile();
-  
-      // 分享訊息
+      // 只進行分享，不儲存協作者資訊
       const result = await liff.shareTargetPicker([
         {
           type: "flex",
@@ -456,7 +486,7 @@ const LineTrip = () => {
                   action: {
                     type: "uri",
                     label: "查看共享行程",
-                    uri: "https://tripfrontend.vercel.app/linetrip"
+                    uri: `https://tripfrontend.vercel.app/linetrip?shared_trip_id=${tripId}`  // 添加參數
                   },
                   style: "primary"
                 }
@@ -467,30 +497,7 @@ const LineTrip = () => {
       ]);
   
       if (result) {
-        // 取得分享目標的用戶資訊
-        const shareInfo = result.shareTargetIds[0];  // 取得分享目標的第一個用戶ID
-        if (!shareInfo) {
-          throw new Error('無法獲取分享對象資訊');
-        }
-  
-        // 呼叫後端 API 進行分享
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/line/trip/share`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            trip_id: tripId,
-            shared_user_id: shareInfo,  // 使用分享目標的用戶ID
-            owner_id: currentUser.userId  // 添加當前用戶ID作為擁有者
-          })
-        });
-  
-        if (!response.ok) {
-          throw new Error('分享設定失敗');
-        }
-  
-        alert('分享成功！對方可以在行程列表中看到此行程。');
+        alert('分享成功！對方點擊連結後即可查看行程。');
       }
     } catch (error) {
       console.error('分享失敗:', error);
