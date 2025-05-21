@@ -459,7 +459,7 @@ const LineTrip = () => {
                   action: {
                     type: "uri",
                     label: "查看並編輯行程",
-                    uri: `${window.location.origin}/linetripdetail/${tripId}`
+                    uri: `${window.location.origin}/linetrip`
                   },
                   style: "primary"
                 }
