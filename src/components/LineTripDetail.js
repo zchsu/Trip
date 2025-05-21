@@ -50,31 +50,6 @@ const TripDetail = () => {
       }
     };
   
-    const checkPermission = async () => {
-      try {
-        await initializeLiff();  // 確保 LIFF 已初始化
-        
-        const user = await liff.getDecodedIDToken();
-        const userId = user.sub;
-  
-        const response = await fetch(
-          `${process.env.REACT_APP_API_URL}/line/trip-permission/${tripId}?user_id=${userId}`
-        );
-        const data = await response.json();
-        
-        if (!data.permission && !data.isOwner) {
-          alert('您沒有權限查看此行程，請聯繫行程擁有者獲取權限。');
-          navigate('/linetrip');
-          return;
-        }
-        
-        setHasEditPermission(data.permission === 'edit' || data.isOwner);
-      } catch (error) {
-        console.error('檢查權限失敗:', error);
-        setError('無法驗證訪問權限');
-      }
-    };
-  
     const fetchTripDetails = async () => {
       setIsLoading(true);
       try {
@@ -89,9 +64,9 @@ const TripDetail = () => {
       }
     };
   
-    checkPermission();
+    initializeLiff();
     fetchTripDetails();
-  }, [tripId, navigate]);
+  }, [tripId]);
 
   if (isLoading) return <div className="loading">載入中...</div>;
   if (error) return <div className="error">{error}</div>;

@@ -441,6 +441,12 @@ const LineTrip = () => {
                   size: "sm",
                   color: "#999999",
                   margin: "md"
+                },
+                {
+                  type: "text",
+                  text: trip.area || "未設定地區",
+                  size: "sm",
+                  color: "#999999"
                 }
               ]
             },
@@ -464,7 +470,22 @@ const LineTrip = () => {
       ]);
   
       if (result) {
-        alert('分享成功！對方可以查看並編輯行程。');
+        // 獲取被分享者的 Line ID
+        const profile = await liff.getProfile();
+        
+        // 呼叫後端 API 進行分享
+        await fetch(`${process.env.REACT_APP_API_URL}/line/trip/share`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            trip_id: tripId,
+            shared_user_id: profile.userId
+          })
+        });
+  
+        alert('分享成功！對方可以在行程列表中看到此行程。');
       }
     } catch (error) {
       console.error('分享失敗:', error);
