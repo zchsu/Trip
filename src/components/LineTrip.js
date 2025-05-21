@@ -417,24 +417,26 @@ const LineTrip = () => {
         throw new Error('LIFF 未初始化');
       }
   
-      const user = await liff.getDecodedIDToken();
-      const sharedUserId = user.sub;
-  
-      // 先建立分享權限
-      const shareResponse = await fetch(`${process.env.REACT_APP_API_URL}/line/trip/share`, {
+      // 先取得 LINE 用戶資訊
+      const profile = await liff.getProfile();
+      
+      // 使用 customFetch 確保一致的請求處理
+      const shareResponse = await customFetch(`${process.env.REACT_APP_API_URL}/line/trip/share`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           trip_id: tripId,
-          shared_user_id: sharedUserId,
+          shared_user_id: profile.userId,  // 使用 profile.userId
           permission_type: 'edit'
         })
       });
   
+      // 檢查回應狀態
       if (!shareResponse.ok) {
-        throw new Error('設定分享權限失敗');
+        const errorData = await shareResponse.json();
+        throw new Error(errorData.error || '設定分享權限失敗');
       }
   
       // 分享訊息
@@ -444,6 +446,13 @@ const LineTrip = () => {
           altText: `分享行程：${trip.title}`,
           contents: {
             type: "bubble",
+            hero: {
+              type: "image",
+              url: "https://example.com/your-image.jpg",  // 可以加入行程相關圖片
+              size: "full",
+              aspectRatio: "20:13",
+              aspectMode: "cover"
+            },
             body: {
               type: "box",
               layout: "vertical",
@@ -452,13 +461,22 @@ const LineTrip = () => {
                   type: "text",
                   text: trip.title,
                   weight: "bold",
-                  size: "xl"
+                  size: "xl",
+                  wrap: true
                 },
                 {
                   type: "text",
                   text: `${formatDate(trip.start_date)} - ${formatDate(trip.end_date)}`,
                   size: "sm",
-                  color: "#999999"
+                  color: "#999999",
+                  margin: "md"
+                },
+                {
+                  type: "text",
+                  text: trip.area || "未設定地區",
+                  size: "sm",
+                  color: "#999999",
+                  margin: "sm"
                 }
               ]
             },
