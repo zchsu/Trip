@@ -80,41 +80,97 @@ const LineTrip = () => {
     touchStartY.current = 0;
   };
 
+  // LIFF 初始化和共享行程處理的 useEffect
   useEffect(() => {
-    const handleSharedTrip = async () => {
+    const initializeLiffAndHandleShare = async () => {
       try {
-        // 從 URL 獲取分享的行程 ID
+        console.log("正在初始化 LIFF...");
+        await liff.init({ 
+          liffId: process.env.REACT_APP_LIFF_ID,
+          withLoginOnExternalBrowser: true
+        });
+        console.log("LIFF 初始化成功");
+
+        // 檢查登入狀態
+        if (!liff.isLoggedIn()) {
+          console.log("用戶未登入，開始登入流程");
+          try {
+            await liff.login();
+          } catch (loginError) {
+            console.error("登入失敗:", loginError);
+            setError(`登入失敗: ${loginError.message}`);
+            return;
+          }
+        }
+
+        // 獲取用戶資料
+        console.log("開始獲取用戶資料");
+        const profile = await liff.getProfile();
+        console.log("用戶資料:", profile);
+        setUserProfile(profile);
+        
+        // 儲存用戶資料
+        await saveUserProfile(profile);
+
+        // 檢查 URL 是否包含共享行程參數
         const urlParams = new URLSearchParams(window.location.search);
         const sharedTripId = urlParams.get('shared_trip_id');
-  
-        if (sharedTripId && userProfile) {
-          // 當有分享的行程 ID 且用戶已登入時，添加協作者關係
-          const response = await fetch(`${process.env.REACT_APP_API_URL}/line/trip/share`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              trip_id: sharedTripId,
-              shared_user_id: userProfile.userId
-            })
-          });
-  
-          if (!response.ok) {
-            throw new Error('無法加入共享行程');
+
+        if (sharedTripId) {
+          console.log("檢測到共享行程 ID:", sharedTripId);
+          // 將當前用戶添加為協作者
+          try {
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/line/trip/share`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                trip_id: sharedTripId,
+                shared_user_id: profile.userId
+              })
+            });
+
+            if (!response.ok) {
+              throw new Error('無法加入共享行程');
+            }
+
+            console.log("成功加入共享行程");
+          } catch (shareError) {
+            console.error("加入共享行程失敗:", shareError);
+            setError(`加入共享行程失敗: ${shareError.message}`);
           }
-  
-          // 重新獲取行程列表
-          await fetchTrips(userProfile.userId);
         }
-      } catch (error) {
-        console.error('處理共享行程失敗:', error);
-        setError(error.message);
+
+        // 獲取用戶的所有行程（包括被分享的）
+        await fetchTrips(profile.userId);
+
+      } catch (e) {
+        console.error("LIFF 初始化失敗:", e);
+        const errorMessage = e.message || '未知錯誤';
+        const errorCode = e.code || 'NO_CODE';
+        setError(`LIFF 初始化失敗 (${errorCode}): ${errorMessage}`);
+        
+        if (liff.isInClient()) {
+          console.log("在 LINE 內瀏覽器中");
+        } else {
+          console.log("在外部瀏覽器中");
+          setTimeout(() => {
+            window.location.reload();
+          }, 3000);
+        }
+      } finally {
+        setIsLoading(false);
       }
     };
-  
+
+    initializeLiffAndHandleShare();
+  }, []);
+
+  // 監聽 userProfile 變化的 useEffect
+  useEffect(() => {
     if (userProfile) {
-      handleSharedTrip();
+      fetchTrips(userProfile.userId);
     }
   }, [userProfile]);
 
