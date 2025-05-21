@@ -411,6 +411,25 @@ const LineTrip = () => {
     });
   };
 
+  const handleShareTrip = async (tripId) => {
+    try {
+      // 使用 LIFF 的分享功能
+      if (window.liff) {
+        const url = `${window.location.origin}/linetripdetail/${tripId}`;
+        await liff.shareTargetPicker([
+          {
+            type: "text",
+            text: `查看我的行程：${url}`
+          }
+        ]);
+        alert('分享連結已發送！');
+      }
+    } catch (error) {
+      console.error('分享失敗:', error);
+      alert('分享失敗，請稍後再試');
+    }
+  };
+
   const renderTripDetails = (details) => {
     if (isLoadingDetails) {
       return <p className="loading-details">載入中...</p>;
@@ -654,6 +673,15 @@ const LineTrip = () => {
                   e.stopPropagation();
                   handleDeleteTrip(trip.trip_id);
                 }}>刪除</button>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShareTrip(trip.trip_id);
+                  }}
+                  className="share-button"
+                >
+                  分享
+              </button>
               </div>
             </>
           )}

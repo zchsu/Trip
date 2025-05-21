@@ -805,3 +805,39 @@
 .add-detail-button:hover {
   background-color: var(--primary-dark);
 }
+
+.share-button {
+  background: var(--secondary-color);
+  color: var(--accent-color);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.share-button:hover {
+  background: var(--primary-light);
+  color: white;
+}
+
+/* 分享相關提示 */
+.shared-badge {
+  background: var(--primary-color);
+  color: white;
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.permission-badge {
+  background: var(--accent-color);
+  color: white;
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: 8px;
+}

@@ -19,6 +19,7 @@ const TripDetail = () => {
   });
   const [showAddForm, setShowAddForm] = useState(false);
   const [slideStates, setSlideStates] = useState(new Map());
+  const [hasEditPermission, setHasEditPermission] = useState(false);
   const swipeThreshold = 50;
 
   const { tripTitle, startDate, endDate } = location.state || {};
@@ -48,7 +49,18 @@ const TripDetail = () => {
       }
     };
 
+    const checkPermission = async () => {
+      try {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/line/trip-permission/${tripId}`);
+        const data = await response.json();
+        setHasEditPermission(data.permission === 'edit' || data.isOwner);
+      } catch (error) {
+        console.error('檢查權限失敗:', error);
+      }
+    };
+
     fetchTripDetails();
+    checkPermission();
   }, [tripId]);
 
   if (isLoading) return <div className="loading">載入中...</div>;
@@ -344,14 +356,16 @@ const TripDetail = () => {
       </div>
 
       {/* 修改新增行程細節按鈕 */}
-      <div className="add-detail-section">
-        <button 
-          className="add-detail-button"
-          onClick={handleAddClick}
-        >
-          新增行程細節
-        </button>
-      </div>
+      {hasEditPermission && (
+        <div className="add-detail-section">
+          <button 
+            className="add-detail-button"
+            onClick={handleAddClick}
+          >
+            新增行程細節
+          </button>
+        </div>
+      )}
 
       {/* 新增行程細節表單 */}
       {showAddForm && (
