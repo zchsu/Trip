@@ -417,6 +417,9 @@ const LineTrip = () => {
         throw new Error('LIFF 未初始化');
       }
   
+      // 先取得當前用戶資料
+      const currentUser = await liff.getProfile();
+  
       // 分享訊息
       const result = await liff.shareTargetPicker([
         {
@@ -453,7 +456,7 @@ const LineTrip = () => {
                   action: {
                     type: "uri",
                     label: "查看共享行程",
-                    uri: "https://tripfrontend.vercel.app/linetrip"  // 固定網址
+                    uri: "https://tripfrontend.vercel.app/linetrip"
                   },
                   style: "primary"
                 }
@@ -464,9 +467,12 @@ const LineTrip = () => {
       ]);
   
       if (result) {
-        // 獲取被分享者的 Line ID
-        const profile = await liff.getProfile();
-        
+        // 取得分享目標的用戶資訊
+        const shareInfo = result.shareTargetIds[0];  // 取得分享目標的第一個用戶ID
+        if (!shareInfo) {
+          throw new Error('無法獲取分享對象資訊');
+        }
+  
         // 呼叫後端 API 進行分享
         const response = await fetch(`${process.env.REACT_APP_API_URL}/line/trip/share`, {
           method: 'POST',
@@ -475,7 +481,8 @@ const LineTrip = () => {
           },
           body: JSON.stringify({
             trip_id: tripId,
-            shared_user_id: profile.userId
+            shared_user_id: shareInfo,  // 使用分享目標的用戶ID
+            owner_id: currentUser.userId  // 添加當前用戶ID作為擁有者
           })
         });
   
