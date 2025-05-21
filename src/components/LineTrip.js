@@ -417,28 +417,6 @@ const LineTrip = () => {
         throw new Error('LIFF 未初始化');
       }
   
-      // 先取得 LINE 用戶資訊
-      const profile = await liff.getProfile();
-      
-      // 使用 customFetch 確保一致的請求處理
-      const shareResponse = await customFetch(`${process.env.REACT_APP_API_URL}/line/trip/share`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          trip_id: tripId,
-          shared_user_id: profile.userId,  // 使用 profile.userId
-          permission_type: 'edit'
-        })
-      });
-  
-      // 檢查回應狀態
-      if (!shareResponse.ok) {
-        const errorData = await shareResponse.json();
-        throw new Error(errorData.error || '設定分享權限失敗');
-      }
-  
       // 分享訊息
       const result = await liff.shareTargetPicker([
         {
@@ -446,13 +424,6 @@ const LineTrip = () => {
           altText: `分享行程：${trip.title}`,
           contents: {
             type: "bubble",
-            hero: {
-              type: "image",
-              url: "https://example.com/your-image.jpg",  // 可以加入行程相關圖片
-              size: "full",
-              aspectRatio: "20:13",
-              aspectMode: "cover"
-            },
             body: {
               type: "box",
               layout: "vertical",
@@ -470,13 +441,6 @@ const LineTrip = () => {
                   size: "sm",
                   color: "#999999",
                   margin: "md"
-                },
-                {
-                  type: "text",
-                  text: trip.area || "未設定地區",
-                  size: "sm",
-                  color: "#999999",
-                  margin: "sm"
                 }
               ]
             },
