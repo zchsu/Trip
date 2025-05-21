@@ -441,12 +441,6 @@ const LineTrip = () => {
                   size: "sm",
                   color: "#999999",
                   margin: "md"
-                },
-                {
-                  type: "text",
-                  text: trip.area || "未設定地區",
-                  size: "sm",
-                  color: "#999999"
                 }
               ]
             },
@@ -458,8 +452,8 @@ const LineTrip = () => {
                   type: "button",
                   action: {
                     type: "uri",
-                    label: "查看並編輯行程",
-                    uri: `${window.location.origin}/linetrip`
+                    label: "查看共享行程",
+                    uri: "https://tripfrontend.vercel.app/linetrip"  // 固定網址
                   },
                   style: "primary"
                 }
@@ -474,7 +468,7 @@ const LineTrip = () => {
         const profile = await liff.getProfile();
         
         // 呼叫後端 API 進行分享
-        await fetch(`${process.env.REACT_APP_API_URL}/line/trip/share`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/line/trip/share`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -484,6 +478,10 @@ const LineTrip = () => {
             shared_user_id: profile.userId
           })
         });
+  
+        if (!response.ok) {
+          throw new Error('分享設定失敗');
+        }
   
         alert('分享成功！對方可以在行程列表中看到此行程。');
       }
