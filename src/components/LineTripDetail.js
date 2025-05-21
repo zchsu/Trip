@@ -360,8 +360,8 @@ const TripDetail = () => {
         ))}
       </div>
 
-      {/* 修改新增行程細節按鈕 */}
-      {hasEditPermission && (
+      
+      
         <div className="add-detail-section">
           <button 
             className="add-detail-button"
@@ -370,7 +370,7 @@ const TripDetail = () => {
             新增行程細節
           </button>
         </div>
-      )}
+      
 
       {/* 新增行程細節表單 */}
       {showAddForm && (
