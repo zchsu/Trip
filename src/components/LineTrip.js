@@ -800,10 +800,7 @@ const LineTrip = () => {
                     area: trip.area || ''
                   });
                 }}>編輯</button>
-                <button onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteTrip(trip.trip_id);
-                }}>刪除</button>
+
                 <button 
                   onClick={(e) => {
                     e.stopPropagation();
@@ -811,8 +808,15 @@ const LineTrip = () => {
                   }}
                   className="share-button"
                 >
-                  分享
-              </button>
+                  分享</button>
+
+                <button onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteTrip(trip.trip_id);
+                }}className="action-button delete-button"
+                  aria-label="刪除"
+                >🗑️</button>
+                
               </div>
             </>
           )}
