@@ -841,3 +841,31 @@
   border-radius: 12px;
   margin-left: 8px;
 }
+
+/* 刪除按鈕樣式 */
+.delete-button {
+  background: none !important;  /* 使用 !important 來確保覆蓋其他樣式 */
+  border: none;
+  padding: 4px 8px !important;  /* 縮小按鈕 */
+  cursor: pointer;
+  font-size: 16px !important;  /* 調整圖示大小 */
+  color: #666 !important;      /* 灰色圖示 */
+  min-width: auto !important;  /* 防止按鈕被強制拉寬 */
+  flex: none !important;       /* 防止 flex 布局影響 */
+}
+
+.delete-button:hover {
+  color: #333 !important;
+  background: none !important;
+}
+
+/* 深色模式下的刪除按鈕 */
+@media (prefers-color-scheme: dark) {
+  .delete-button {
+    color: #999 !important;
+  }
+  
+  .delete-button:hover {
+    color: #ccc !important;
+  }
+}
