@@ -553,7 +553,7 @@
     }
   
     .delete-action {
-      background-color: #cc0000;
+      background-color: #e5e3e3;
     }
   
     .details-content {
@@ -696,7 +696,7 @@
 }
 
 .trip-actions button:last-child {
-  background-color: #cd5c5c;
+  background-color: #ededed;
   color: white;
 }
 
