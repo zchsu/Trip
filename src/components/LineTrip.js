@@ -510,7 +510,7 @@ const LineTrip = () => {
       const result = await liff.shareTargetPicker([
         {
           type: "flex",
-          altText: `分享行程：${trip.title}`,
+          altText: `邀請你一起規劃${trip.title}的行程！`,
           contents: {
             type: "bubble",
             body: {
