@@ -506,7 +506,6 @@ const LineTrip = () => {
         throw new Error('LIFF 未初始化');
       }
   
-      // 只進行分享，不儲存協作者資訊
       const result = await liff.shareTargetPicker([
         {
           type: "flex",
@@ -516,37 +515,117 @@ const LineTrip = () => {
             body: {
               type: "box",
               layout: "vertical",
+              spacing: "md",
               contents: [
+                {
+                  type: "text",
+                  text: "✈️ 旅遊行程分享",
+                  weight: "bold",
+                  color: "#1DB446",
+                  size: "sm"
+                },
                 {
                   type: "text",
                   text: trip.title,
                   weight: "bold",
-                  size: "xl",
+                  size: "xxl",
                   wrap: true
                 },
                 {
-                  type: "text",
-                  text: `${formatDate(trip.start_date)} - ${formatDate(trip.end_date)}`,
-                  size: "sm",
-                  color: "#999999",
-                  margin: "md"
+                  type: "box",
+                  layout: "vertical",
+                  margin: "lg",
+                  spacing: "sm",
+                  contents: [
+                    {
+                      type: "box",
+                      layout: "baseline",
+                      spacing: "sm",
+                      contents: [
+                        {
+                          type: "text",
+                          text: "📅",
+                          flex: 1,
+                          size: "sm"
+                        },
+                        {
+                          type: "text",
+                          text: `${formatDate(trip.start_date)} - ${formatDate(trip.end_date)}`,
+                          flex: 5,
+                          size: "sm",
+                          color: "#666666",
+                          wrap: true
+                        }
+                      ]
+                    },
+                    {
+                      type: "box",
+                      layout: "baseline",
+                      spacing: "sm",
+                      contents: [
+                        {
+                          type: "text",
+                          text: "📍",
+                          flex: 1,
+                          size: "sm"
+                        },
+                        {
+                          type: "text",
+                          text: trip.area || "尚未設定地點",
+                          flex: 5,
+                          size: "sm",
+                          color: "#666666",
+                          wrap: true
+                        }
+                      ]
+                    },
+                    {
+                      type: "box",
+                      layout: "baseline",
+                      spacing: "sm",
+                      contents: [
+                        {
+                          type: "text",
+                          text: "📝",
+                          flex: 1,
+                          size: "sm"
+                        },
+                        {
+                          type: "text",
+                          text: trip.description || "尚未新增描述",
+                          flex: 5,
+                          size: "sm",
+                          color: "#666666",
+                          wrap: true,
+                          maxLines: 2
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
             },
             footer: {
               type: "box",
               layout: "vertical",
+              spacing: "sm",
               contents: [
                 {
                   type: "button",
                   action: {
                     type: "uri",
                     label: "查看共享行程",
-                    uri: `https://tripfrontend.vercel.app/linetrip?shared_trip_id=${tripId}`  // 添加參數
+                    uri: `https://tripfrontend.vercel.app/linetrip?shared_trip_id=${tripId}`
                   },
-                  style: "primary"
+                  style: "primary",
+                  color: "#1DB446"
                 }
               ]
+            },
+            styles: {
+              footer: {
+                separator: true
+              }
             }
           }
         }
