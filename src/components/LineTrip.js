@@ -506,27 +506,32 @@ const LineTrip = () => {
         throw new Error('LIFF 未初始化');
       }
 
-    // 改進快取清除邏輯
-    try {
-      if (liff.isInClient()) {
-        // 在 LINE APP 內執行
-        await liff.permanentLink.createUrlBy({
-          clearCache: true
-        });
-        // 額外的快取清除嘗試
-        const timestamp = new Date().getTime();
-        const noCacheUrl = `https://tripfrontend.vercel.app/linetrip?shared_trip_id=${tripId}&t=${timestamp}`;
-        console.log('使用無快取URL:', noCacheUrl);
-      } else {
-        // 在外部瀏覽器執行
-        await liff.permanentLink.createUrlBy({
-          clearCache: true
-        });
+    // 清除 LINE 快取
+    const timestamp = new Date().getTime();
+    if (liff.isInClient()) {
+      try {
+        // 在 LINE APP 內執行時的快取清除
+        await Promise.all([
+          // 方法 1: 使用 permanentLink API
+          liff.permanentLink.createUrlBy({
+            clearCache: true
+          }),
+          
+          // 方法 2: 添加時間戳參數
+          fetch(`https://tripfrontend.vercel.app/linetrip?t=${timestamp}`, {
+            method: 'HEAD',
+            cache: 'no-cache',
+            headers: {
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
+            }
+          })
+        ]);
+
+        console.log('LINE APP 快取清除完成');
+      } catch (cacheError) {
+        console.warn('LINE APP 快取清除失敗:', cacheError);
       }
-      console.log('LINE 快取已清除');
-    } catch (cacheError) {
-      console.warn('清除快取失敗:', cacheError);
-      // 繼續執行，不中斷流程
     }
   
       // 只進行分享，不儲存協作者資訊
