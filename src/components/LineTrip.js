@@ -506,14 +506,27 @@ const LineTrip = () => {
         throw new Error('LIFF 未初始化');
       }
 
-    // 清除 LINE 快取
+    // 改進快取清除邏輯
     try {
-      await liff.permanentLink.createUrlBy({
-        clearCache: true
-      });
+      if (liff.isInClient()) {
+        // 在 LINE APP 內執行
+        await liff.permanentLink.createUrlBy({
+          clearCache: true
+        });
+        // 額外的快取清除嘗試
+        const timestamp = new Date().getTime();
+        const noCacheUrl = `https://tripfrontend.vercel.app/linetrip?shared_trip_id=${tripId}&t=${timestamp}`;
+        console.log('使用無快取URL:', noCacheUrl);
+      } else {
+        // 在外部瀏覽器執行
+        await liff.permanentLink.createUrlBy({
+          clearCache: true
+        });
+      }
       console.log('LINE 快取已清除');
     } catch (cacheError) {
       console.warn('清除快取失敗:', cacheError);
+      // 繼續執行，不中斷流程
     }
   
       // 只進行分享，不儲存協作者資訊
