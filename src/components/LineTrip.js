@@ -506,7 +506,16 @@ const LineTrip = () => {
         throw new Error('LIFF 未初始化');
       }
   
-      // 只進行分享，不儲存協作者資訊
+      // 清除 LINE 快取
+      try {
+        await liff.permanentLink.createUrlBy({
+          clearCache: true
+        });
+        console.log('LINE 快取已清除');
+      } catch (cacheError) {
+        console.warn('清除快取失敗:', cacheError);
+      }
+  
       const result = await liff.shareTargetPicker([
         {
           type: "flex",
