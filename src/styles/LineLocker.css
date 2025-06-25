@@ -52,7 +52,7 @@
 .search-form {
   background: white;
   border-radius: 20px;
-  margin: -30px 15px 20px;
+  margin: 20px 15px 20px; /* 原本是 -30px，改為20px，讓上方有距離 */
   padding: 20px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
   position: relative;
@@ -342,7 +342,7 @@
   justify-content: center;
   align-items: center;
   gap: 0;
-  margin: 28px 0 28px 0; /* 上下間距加大 */
+  margin: 28px 0 40px 0; /* 下方間距加大為40px */
   padding: 0;
 }
 
