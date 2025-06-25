@@ -536,49 +536,131 @@ const LineTrip = () => {
   
       // 只進行分享，不儲存協作者資訊
       const result = await liff.shareTargetPicker([
-        {
-          type: "flex",
-          altText: `邀請你一起規劃"${trip.title}"的行程！`,
-          contents: {
-            type: "bubble",
-            body: {
-              type: "box",
-              layout: "vertical",
-              contents: [
-                {
-                  type: "text",
-                  text: trip.title,
-                  weight: "bold",
-                  size: "xl",
-                  wrap: true
-                },
-                {
-                  type: "text",
-                  text: `${formatDate(trip.start_date)} - ${formatDate(trip.end_date)}`,
-                  size: "sm",
-                  color: "#999999",
-                  margin: "md"
-                }
-              ]
-            },
-            footer: {
-              type: "box",
-              layout: "vertical",
-              contents: [
-                {
-                  type: "button",
-                  action: {
-                    type: "uri",
-                    label: "查看共享行程",
-                    uri: `https://tripfrontend.vercel.app/linetrip?shared_trip_id=${tripId}`  // 添加參數
+      {
+        type: "flex",
+        altText: `邀請你一起規劃"${trip.title}"的行程！`,
+        contents: {
+          type: "bubble",
+          size: "mega",
+          body: {
+            type: "box",
+            layout: "vertical",
+            spacing: "md",
+            contents: [
+              {
+                type: "text",
+                text: "✈️ 旅遊行程邀請",
+                weight: "bold",
+                color: "#1DB446",
+                size: "sm"
+              },
+              {
+                type: "text",
+                text: trip.title,
+                weight: "bold",
+                size: "xl",
+                wrap: true,
+                margin: "md"
+              },
+              {
+                type: "box",
+                layout: "vertical",
+                margin: "lg",
+                spacing: "sm",
+                contents: [
+                  {
+                    type: "box",
+                    layout: "baseline",
+                    spacing: "sm",
+                    contents: [
+                      {
+                        type: "text",
+                        text: "📅",
+                        size: "sm",
+                        flex: 1
+                      },
+                      {
+                        type: "text",
+                        text: `${formatDate(trip.start_date)} - ${formatDate(trip.end_date)}`,
+                        size: "sm",
+                        color: "#666666",
+                        flex: 5,
+                        wrap: true
+                      }
+                    ]
                   },
-                  style: "primary"
-                }
-              ]
+                  {
+                    type: "box",
+                    layout: "baseline",
+                    spacing: "sm",
+                    contents: [
+                      {
+                        type: "text",
+                        text: "📍",
+                        size: "sm",
+                        flex: 1
+                      },
+                      {
+                        type: "text",
+                        text: trip.area || "尚未設定地點",
+                        size: "sm",
+                        color: "#666666",
+                        flex: 5,
+                        wrap: true
+                      }
+                    ]
+                  },
+                  {
+                    type: "box",
+                    layout: "baseline",
+                    spacing: "sm",
+                    contents: [
+                      {
+                        type: "text",
+                        text: "📝",
+                        size: "sm",
+                        flex: 1
+                      },
+                      {
+                        type: "text",
+                        text: trip.description || "尚未新增描述",
+                        size: "sm",
+                        color: "#666666",
+                        flex: 5,
+                        wrap: true,
+                        maxLines: 2
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          footer: {
+            type: "box",
+            layout: "vertical",
+            spacing: "sm",
+            contents: [
+              {
+                type: "button",
+                action: {
+                  type: "uri",
+                  label: "查看共享行程",
+                  uri: `https://tripfrontend.vercel.app/linetrip?shared_trip_id=${tripId}`
+                },
+                style: "primary",
+                color: "#1DB446"
+              }
+            ]
+          },
+          styles: {
+            footer: {
+              separator: true
             }
           }
         }
-      ]);
+      }
+    ]);
   
       if (result) {
         alert('分享成功！對方點擊連結後即可查看行程。');
