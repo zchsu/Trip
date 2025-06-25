@@ -289,17 +289,24 @@ const LineLocker = () => {
         </div>
       </header>
 
-      {/* 地區選擇 */}
-      <div className="region-select-group">
-        <label htmlFor="region-select">搜尋地區：</label>
-        <select
-          id="region-select"
-          value={region}
-          onChange={e => setRegion(e.target.value)}
+      {/* 地區選擇 Segmented Control */}
+      <div className="region-segmented-group">
+        <button
+          className={`region-segment${region === 'japan' ? ' active' : ''}`}
+          onClick={() => setRegion('japan')}
+          type="button"
+          aria-pressed={region === 'japan'}
         >
-          <option value="japan">日本</option>
-          <option value="taiwan">台灣</option>
-        </select>
+          日本
+        </button>
+        <button
+          className={`region-segment${region === 'taiwan' ? ' active' : ''}`}
+          onClick={() => setRegion('taiwan')}
+          type="button"
+          aria-pressed={region === 'taiwan'}
+        >
+          台灣
+        </button>
       </div>
 
       {/* 台灣地區：只顯示區域選單與清單 */}
