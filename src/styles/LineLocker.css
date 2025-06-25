@@ -247,6 +247,57 @@
   margin-top: 10px;
 }
 
+/* 地區選擇區塊美化 */
+.region-select-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 0 20px 10px 20px;
+  padding: 12px 0 0 0;
+  z-index: 10;
+  position: relative;
+}
+
+.region-select-group label {
+  font-weight: 600;
+  color: var(--primary-color);
+  font-size: 15px;
+  letter-spacing: 1px;
+}
+
+.region-select-group select {
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 2px solid var(--primary-color);
+  background: #fff;
+  color: var(--primary-color);
+  font-size: 15px;
+  font-weight: 600;
+  outline: none;
+  transition: border 0.2s;
+  cursor: pointer;
+}
+
+.region-select-group select:focus {
+  border-color: var(--accent-color);
+  background: #f5faff;
+}
+
+@media (max-width: 600px) {
+  .region-select-group {
+    justify-content: center;
+    margin: 0 8px 10px 8px;
+  }
+  .region-select-group label {
+    font-size: 14px;
+  }
+  .region-select-group select {
+    font-size: 14px;
+    padding: 6px 10px;
+  }
+}
+
 /* 動畫效果 */
 @keyframes slideDown {
   from {

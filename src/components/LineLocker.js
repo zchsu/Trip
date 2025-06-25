@@ -143,10 +143,14 @@ const LineLocker = () => {
         </div>
       </header>
 
-      {/* 新增地區選擇區塊 */}
+      {/* region-select-group 移到這裡 */}
       <div className="region-select-group">
-        <label>搜尋地區：</label>
-        <select value={region} onChange={e => setRegion(e.target.value)}>
+        <label htmlFor="region-select">搜尋地區：</label>
+        <select
+          id="region-select"
+          value={region}
+          onChange={e => setRegion(e.target.value)}
+        >
           <option value="japan">日本</option>
           <option value="taiwan">台灣</option>
         </select>
