@@ -4,6 +4,7 @@ import '../styles/LineLocker.css';
 
 const LineLocker = () => {
   const navigate = useNavigate();
+  const [region, setRegion] = useState('japan'); // 新增地區狀態
   const [searchParams, setSearchParams] = useState({
     location: '',
     startDate: '',
@@ -25,6 +26,11 @@ const LineLocker = () => {
   const minutes = ['00', '15', '30', '45'];
 
   const handleSearch = async () => {
+    if (region === 'taiwan') {
+      setSearchResults([]);
+      setError(null);
+      return; // 台灣區域暫不處理
+    }
     try {
       // 驗證輸入
       if (!searchParams.location) {
@@ -77,16 +83,14 @@ const LineLocker = () => {
 
       const url = `https://cloak.ecbo.io/zh-TW/locations?${params.toString()}`;
 
-    // 判斷是否在行動裝置
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      // 判斷是否在行動裝置
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-    if (isMobile) {
-      // 行動裝置使用 location.href
-      window.location.href = url;
-    } else {
-      // 桌面版使用新分頁
-      window.open(url, '_blank');
-    }
+      if (isMobile) {
+        window.location.href = url;
+      } else {
+        window.open(url, '_blank');
+      }
 
     } catch (error) {
       setError(error.message);
@@ -138,6 +142,15 @@ const LineLocker = () => {
           <div className="header-wave"></div>
         </div>
       </header>
+
+      {/* 新增地區選擇區塊 */}
+      <div className="region-select-group">
+        <label>搜尋地區：</label>
+        <select value={region} onChange={e => setRegion(e.target.value)}>
+          <option value="japan">日本</option>
+          <option value="taiwan">台灣</option>
+        </select>
+      </div>
 
       <div className="search-form">
         <div className="form-group">
@@ -269,25 +282,32 @@ const LineLocker = () => {
         </div>
       </div>
 
+      {/* 搜尋結果區塊 */}
       <div className="results-container">
-        {searchResults.map((item, index) => (
-          <div key={index} className="locker-card">
-            <div className="locker-image">
-              <img src={item.image_url} alt={item.name} />
-            </div>
-            <div className="locker-info">
-              <h3>{item.name}</h3>
-              <p className="rating">⭐ {item.rating}</p>
-              <div className="price-info">
-                <p>💼 大型行李：{item.suitcase_price}</p>
-                <p>👜 小型行李：{item.bag_price}</p>
-              </div>
-              <a href={item.link} target="_blank" rel="noopener noreferrer">
-                查看詳情
-              </a>
-            </div>
+        {region === 'taiwan' ? (
+          <div className="taiwan-placeholder">
+            <p>台灣地區的寄物點搜尋功能即將推出，敬請期待！</p>
           </div>
-        ))}
+        ) : (
+          searchResults.map((item, index) => (
+            <div key={index} className="locker-card">
+              <div className="locker-image">
+                <img src={item.image_url} alt={item.name} />
+              </div>
+              <div className="locker-info">
+                <h3>{item.name}</h3>
+                <p className="rating">⭐ {item.rating}</p>
+                <div className="price-info">
+                  <p>💼 大型行李：{item.suitcase_price}</p>
+                  <p>👜 小型行李：{item.bag_price}</p>
+                </div>
+                <a href={item.link} target="_blank" rel="noopener noreferrer">
+                  查看詳情
+                </a>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
