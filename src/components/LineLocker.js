@@ -79,8 +79,9 @@ const TAIWAN_LOCKERS = {
 
 const LineLocker = () => {
   const navigate = useNavigate();
-  const [region, setRegion] = useState('japan'); // 新增地區狀態
+  const [region, setRegion] = useState('japan');
   const [twArea, setTwArea] = useState('北部地區');
+  // 只在日本地區才需要這些狀態
   const [searchParams, setSearchParams] = useState({
     location: '',
     startDate: '',
@@ -92,7 +93,6 @@ const LineLocker = () => {
     bagSize: '0',
     suitcaseSize: '0'
   });
-
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -101,14 +101,9 @@ const LineLocker = () => {
   const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
   const minutes = ['00', '15', '30', '45'];
 
+  // 只在日本地區才需要搜尋
   const handleSearch = async () => {
-    if (region === 'taiwan') {
-      setSearchResults([]);
-      setError(null);
-      return; // 台灣區域暫不處理
-    }
     try {
-      // 驗證輸入
       if (!searchParams.location) {
         throw new Error('請輸入搜尋地點');
       }
@@ -219,7 +214,7 @@ const LineLocker = () => {
         </div>
       </header>
 
-      {/* region-select-group 移到這裡 */}
+      {/* 地區選擇 */}
       <div className="region-select-group">
         <label htmlFor="region-select">搜尋地區：</label>
         <select
@@ -232,183 +227,190 @@ const LineLocker = () => {
         </select>
       </div>
 
+      {/* 台灣地區：只顯示區域選單與清單 */}
       {region === 'taiwan' && (
-        <div className="tw-area-select-group">
-          <label htmlFor="tw-area-select">選擇區域：</label>
-          <select
-            id="tw-area-select"
-            value={twArea}
-            onChange={e => setTwArea(e.target.value)}
-          >
-            {Object.keys(TAIWAN_LOCKERS).map(area => (
-              <option key={area} value={area}>{area}</option>
-            ))}
-          </select>
-        </div>
+        <>
+          <div className="tw-area-select-group">
+            <label htmlFor="tw-area-select">選擇區域：</label>
+            <select
+              id="tw-area-select"
+              value={twArea}
+              onChange={e => setTwArea(e.target.value)}
+            >
+              {Object.keys(TAIWAN_LOCKERS).map(area => (
+                <option key={area} value={area}>{area}</option>
+              ))}
+            </select>
+          </div>
+          <div className="results-container">
+            <div className="taiwan-locker-list">
+              <h3>{twArea}</h3>
+              <ul>
+                {TAIWAN_LOCKERS[twArea].map((locker, idx) => (
+                  <li key={idx}>{locker}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </>
       )}
 
-      <div className="search-form">
-        <div className="form-group">
-          <label>地點</label>
-          <input
-            type="text"
-            value={searchParams.location}
-            onChange={(e) => setSearchParams({...searchParams, location: e.target.value})}
-            placeholder="例如：東京都新宿區"
-          />
-        </div>
-
-        <div className="form-group">
-          <label>日期</label>
-          <input
-            type="date"
-            value={searchParams.startDate}
-            onChange={(e) => setSearchParams({...searchParams, startDate: e.target.value})}
-            min={new Date().toISOString().split('T')[0]}
-          />
-        </div>
-
-        <div className="form-group">
-  <label>使用時間</label>
-  <div className="time-inputs">
-    <div className="time-group">
-      <span>開始時間</span>
-      <select
-        value={searchParams.startTimeHour}
-        onChange={(e) => setSearchParams({...searchParams, startTimeHour: e.target.value})}
-      >
-        <option value="">時</option>
-        {hours.map(hour => (
-          <option key={`start-${hour}`} value={hour}>{hour}</option>
-        ))}
-      </select>
-      <span>:</span>
-      <select
-        value={searchParams.startTimeMin}
-        onChange={(e) => setSearchParams({...searchParams, startTimeMin: e.target.value})}
-      >
-        <option value="">分</option>
-        {minutes.map(min => (
-          <option key={`start-${min}`} value={min}>{min}</option>
-        ))}
-      </select>
-    </div>
-
-    <div className="time-group">
-      <span>結束時間</span>
-      <select
-        value={searchParams.endTimeHour}
-        onChange={(e) => setSearchParams({...searchParams, endTimeHour: e.target.value})}
-      >
-        <option value="">時</option>
-        {hours.map(hour => (
-          <option key={`end-${hour}`} value={hour}>{hour}</option>
-        ))}
-      </select>
-      <span>:</span>
-      <select
-        value={searchParams.endTimeMin}
-        onChange={(e) => setSearchParams({...searchParams, endTimeMin: e.target.value})}
-      >
-        <option value="">分</option>
-        {minutes.map(min => (
-          <option key={`end-${min}`} value={min}>{min}</option>
-        ))}
-      </select>
-    </div>
-  </div>
-</div>
-
-        <div className="form-group">
-          <label>行李數量</label>
-          <div className="baggage-inputs">
-            <div className="baggage-counter">
-              <span>小型行李</span>
-              <div className="counter-controls">
-                <button 
-                  type="button"
-                  onClick={() => handleBaggageChange('bagSize', 'decrease')}
-                  disabled={searchParams.bagSize === '0'}
-                >
-                  -
-                </button>
-                <span>{searchParams.bagSize}</span>
-                <button 
-                  type="button"
-                  onClick={() => handleBaggageChange('bagSize', 'increase')}
-                  disabled={searchParams.bagSize === '5'}
-                >
-                  +
-                </button>
-              </div>
+      {/* 日本地區：顯示原本搜尋表單與結果 */}
+      {region === 'japan' && (
+        <>
+          <div className="search-form">
+            <div className="form-group">
+              <label>地點</label>
+              <input
+                type="text"
+                value={searchParams.location}
+                onChange={(e) => setSearchParams({...searchParams, location: e.target.value})}
+                placeholder="例如：東京都新宿區"
+              />
             </div>
-            <div className="baggage-counter">
-              <span>大型行李</span>
-              <div className="counter-controls">
-                <button 
-                  type="button"
-                  onClick={() => handleBaggageChange('suitcaseSize', 'decrease')}
-                  disabled={searchParams.suitcaseSize === '0'}
-                >
-                  -
-                </button>
-                <span>{searchParams.suitcaseSize}</span>
-                <button 
-                  type="button"
-                  onClick={() => handleBaggageChange('suitcaseSize', 'increase')}
-                  disabled={searchParams.suitcaseSize === '5'}
-                >
-                  +
-                </button>
-              </div>
+
+            <div className="form-group">
+              <label>日期</label>
+              <input
+                type="date"
+                value={searchParams.startDate}
+                onChange={(e) => setSearchParams({...searchParams, startDate: e.target.value})}
+                min={new Date().toISOString().split('T')[0]}
+              />
             </div>
-          </div>
-        </div>
 
-        {error && <div className="error-message">{error}</div>}
-
-        <div className="button-group">
-          <button onClick={handleSearch} disabled={loading} className="search-button">
-            {loading ? '搜尋中...' : '搜尋'}
-          </button>
-          <button onClick={handleReset} className="reset-button">
-            重設
-          </button>
-        </div>
-      </div>
-
-      {/* 搜尋結果區塊 */}
-      <div className="results-container">
-        {region === 'taiwan' ? (
-          <div className="taiwan-locker-list">
-            <h3>{twArea}</h3>
-            <ul>
-              {TAIWAN_LOCKERS[twArea].map((locker, idx) => (
-                <li key={idx}>{locker}</li>
-              ))}
-            </ul>
-          </div>
-        ) : (
-          searchResults.map((item, index) => (
-            <div key={index} className="locker-card">
-              <div className="locker-image">
-                <img src={item.image_url} alt={item.name} />
-              </div>
-              <div className="locker-info">
-                <h3>{item.name}</h3>
-                <p className="rating">⭐ {item.rating}</p>
-                <div className="price-info">
-                  <p>💼 大型行李：{item.suitcase_price}</p>
-                  <p>👜 小型行李：{item.bag_price}</p>
+            <div className="form-group">
+              <label>使用時間</label>
+              <div className="time-inputs">
+                <div className="time-group">
+                  <span>開始時間</span>
+                  <select
+                    value={searchParams.startTimeHour}
+                    onChange={(e) => setSearchParams({...searchParams, startTimeHour: e.target.value})}
+                  >
+                    <option value="">時</option>
+                    {hours.map(hour => (
+                      <option key={`start-${hour}`} value={hour}>{hour}</option>
+                    ))}
+                  </select>
+                  <span>:</span>
+                  <select
+                    value={searchParams.startTimeMin}
+                    onChange={(e) => setSearchParams({...searchParams, startTimeMin: e.target.value})}
+                  >
+                    <option value="">分</option>
+                    {minutes.map(min => (
+                      <option key={`start-${min}`} value={min}>{min}</option>
+                    ))}
+                  </select>
                 </div>
-                <a href={item.link} target="_blank" rel="noopener noreferrer">
-                  查看詳情
-                </a>
+
+                <div className="time-group">
+                  <span>結束時間</span>
+                  <select
+                    value={searchParams.endTimeHour}
+                    onChange={(e) => setSearchParams({...searchParams, endTimeHour: e.target.value})}
+                  >
+                    <option value="">時</option>
+                    {hours.map(hour => (
+                      <option key={`end-${hour}`} value={hour}>{hour}</option>
+                    ))}
+                  </select>
+                  <span>:</span>
+                  <select
+                    value={searchParams.endTimeMin}
+                    onChange={(e) => setSearchParams({...searchParams, endTimeMin: e.target.value})}
+                  >
+                    <option value="">分</option>
+                    {minutes.map(min => (
+                      <option key={`end-${min}`} value={min}>{min}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
-          ))
-        )}
-      </div>
+
+            <div className="form-group">
+              <label>行李數量</label>
+              <div className="baggage-inputs">
+                <div className="baggage-counter">
+                  <span>小型行李</span>
+                  <div className="counter-controls">
+                    <button 
+                      type="button"
+                      onClick={() => handleBaggageChange('bagSize', 'decrease')}
+                      disabled={searchParams.bagSize === '0'}
+                    >
+                      -
+                    </button>
+                    <span>{searchParams.bagSize}</span>
+                    <button 
+                      type="button"
+                      onClick={() => handleBaggageChange('bagSize', 'increase')}
+                      disabled={searchParams.bagSize === '5'}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+                <div className="baggage-counter">
+                  <span>大型行李</span>
+                  <div className="counter-controls">
+                    <button 
+                      type="button"
+                      onClick={() => handleBaggageChange('suitcaseSize', 'decrease')}
+                      disabled={searchParams.suitcaseSize === '0'}
+                    >
+                      -
+                    </button>
+                    <span>{searchParams.suitcaseSize}</span>
+                    <button 
+                      type="button"
+                      onClick={() => handleBaggageChange('suitcaseSize', 'increase')}
+                      disabled={searchParams.suitcaseSize === '5'}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {error && <div className="error-message">{error}</div>}
+
+            <div className="button-group">
+              <button onClick={handleSearch} disabled={loading} className="search-button">
+                {loading ? '搜尋中...' : '搜尋'}
+              </button>
+              <button onClick={handleReset} className="reset-button">
+                重設
+              </button>
+            </div>
+          </div>
+
+          {/* 日本搜尋結果區塊 */}
+          <div className="results-container">
+            {searchResults.map((item, index) => (
+              <div key={index} className="locker-card">
+                <div className="locker-image">
+                  <img src={item.image_url} alt={item.name} />
+                </div>
+                <div className="locker-info">
+                  <h3>{item.name}</h3>
+                  <p className="rating">⭐ {item.rating}</p>
+                  <div className="price-info">
+                    <p>💼 大型行李：{item.suitcase_price}</p>
+                    <p>👜 小型行李：{item.bag_price}</p>
+                  </div>
+                  <a href={item.link} target="_blank" rel="noopener noreferrer">
+                    查看詳情
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 };
