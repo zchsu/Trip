@@ -284,18 +284,56 @@
   background: #f5faff;
 }
 
-@media (max-width: 600px) {
-  .region-select-group {
-    justify-content: center;
-    margin: 0 8px 10px 8px;
-  }
-  .region-select-group label {
-    font-size: 14px;
-  }
-  .region-select-group select {
-    font-size: 14px;
-    padding: 6px 10px;
-  }
+/* 台灣地區選擇區塊美化 */
+.tw-area-select-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 20px 0 20px;
+}
+
+.tw-area-select-group label {
+  font-weight: 600;
+  color: var(--primary-color);
+  font-size: 15px;
+}
+
+.tw-area-select-group select {
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 2px solid var(--primary-color);
+  background: #fff;
+  color: var(--primary-color);
+  font-size: 15px;
+  font-weight: 600;
+  outline: none;
+  transition: border 0.2s;
+  cursor: pointer;
+}
+
+/* 台灣儲物櫃列表樣式 */
+.taiwan-locker-list {
+  margin: 20px;
+  background: #f8fafd;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 8px #0001;
+}
+
+.taiwan-locker-list h3 {
+  color: var(--primary-color);
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+}
+
+.taiwan-locker-list ul {
+  padding-left: 18px;
+}
+
+.taiwan-locker-list li {
+  margin-bottom: 6px;
+  font-size: 15px;
+  color: #333;
 }
 
 /* 動畫效果 */
@@ -345,5 +383,19 @@
 
   .form-group label {
     color: white;
+  }
+}
+
+@media (max-width: 600px) {
+  .region-select-group {
+    justify-content: center;
+    margin: 0 8px 10px 8px;
+  }
+  .region-select-group label {
+    font-size: 14px;
+  }
+  .region-select-group select {
+    font-size: 14px;
+    padding: 6px 10px;
   }
 }
