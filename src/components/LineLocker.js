@@ -39,7 +39,7 @@ const LineLocker = () => {
   useEffect(() => {
     if (region === 'taiwan') {
       setLoading(true);
-      fetch('https://owlocker.com/api/info')
+      fetch('/proxy/owlocker_info')
         .then(res => res.json())
         .then(data => {
           // 支援多個地點
@@ -73,7 +73,7 @@ const LineLocker = () => {
     setLockerDetail(null);
     setLoading(true);
     try {
-      const res = await fetch(`https://owlocker.com/api/locker/${site.site_no}`);
+      const res = await fetch(`/proxy/owlocker_locker/${site.site_no}`);
       const data = await res.json();
       setLockerDetail(data);
     } catch (e) {
