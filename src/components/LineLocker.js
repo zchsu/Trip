@@ -135,7 +135,18 @@ const LineLocker = () => {
   // 台灣地區搜尋
   const handleTaiwanSearch = () => {
     if (!twSearch) return;
-    const url = `https://www.lalalocker.com/zh-TW/store/?q=${encodeURIComponent(twSearch)}&dateFrom=&timeFrom=00%3A00&dateTo=&timeTo=00%3A00`;
+
+    // 取得時間（預設 00:00~00:00）
+    let timeFrom = "00:00";
+    let timeTo = "00:00";
+    if (searchParams.startTimeHour && searchParams.startTimeMin) {
+      timeFrom = `${searchParams.startTimeHour}:${searchParams.startTimeMin}`;
+    }
+    if (searchParams.endTimeHour && searchParams.endTimeMin) {
+      timeTo = `${searchParams.endTimeHour}:${searchParams.endTimeMin}`;
+    }
+
+    const url = `https://www.lalalocker.com/zh-TW/store/?q=${encodeURIComponent(twSearch)}&dateFrom=&timeFrom=${encodeURIComponent(timeFrom)}&dateTo=&timeTo=${encodeURIComponent(timeTo)}`;
     window.open(url, '_blank');
   };
 
@@ -180,6 +191,54 @@ const LineLocker = () => {
               onChange={e => setTwSearch(e.target.value)}
               placeholder="例如：台北101"
             />
+          </div>
+          <div className="form-group">
+            <label>開始時間</label>
+            <div className="time-group">
+              <select
+                value={searchParams.startTimeHour}
+                onChange={e => setSearchParams({ ...searchParams, startTimeHour: e.target.value })}
+              >
+                <option value="">時</option>
+                {hours.map(hour => (
+                  <option key={`tw-start-${hour}`} value={hour}>{hour}</option>
+                ))}
+              </select>
+              <span>:</span>
+              <select
+                value={searchParams.startTimeMin}
+                onChange={e => setSearchParams({ ...searchParams, startTimeMin: e.target.value })}
+              >
+                <option value="">分</option>
+                {minutes.map(min => (
+                  <option key={`tw-start-${min}`} value={min}>{min}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="form-group">
+            <label>結束時間</label>
+            <div className="time-group">
+              <select
+                value={searchParams.endTimeHour}
+                onChange={e => setSearchParams({ ...searchParams, endTimeHour: e.target.value })}
+              >
+                <option value="">時</option>
+                {hours.map(hour => (
+                  <option key={`tw-end-${hour}`} value={hour}>{hour}</option>
+                ))}
+              </select>
+              <span>:</span>
+              <select
+                value={searchParams.endTimeMin}
+                onChange={e => setSearchParams({ ...searchParams, endTimeMin: e.target.value })}
+              >
+                <option value="">分</option>
+                {minutes.map(min => (
+                  <option key={`tw-end-${min}`} value={min}>{min}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="button-group">
             <button onClick={handleTaiwanSearch} className="search-button">
