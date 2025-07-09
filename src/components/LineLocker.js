@@ -1,21 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/LineLocker.css';
-
-const areaOptions = [
-  '北部地區', '中部地區', '南部地區', '離島地區'
-];
 
 const LineLocker = () => {
   const navigate = useNavigate();
   const [region, setRegion] = useState('japan');
-  const [twArea, setTwArea] = useState('北部地區');
-  const [twSites, setTwSites] = useState([]); // 全部地點
-  const [twAreaSites, setTwAreaSites] = useState([]); // 當前區域地點
-  const [selectedSite, setSelectedSite] = useState(null); // 選中的地點物件
-  const [lockerDetail, setLockerDetail] = useState(null); // locker 詳細
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
   // 日本地區搜尋用
   const [searchParams, setSearchParams] = useState({
@@ -30,58 +19,15 @@ const LineLocker = () => {
     suitcaseSize: '0'
   });
   const [searchResults, setSearchResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // 台灣地區搜尋用
+  const [twSearch, setTwSearch] = useState('');
 
   // 時間選項
   const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
   const minutes = ['00', '15', '30', '45'];
-
-  // 取得所有台灣地點
-  useEffect(() => {
-    if (region === 'taiwan') {
-      setLoading(true);
-      fetch('/proxy/owlocker_info')
-        .then(res => res.json())
-        .then(data => {
-          // 支援多個地點
-          let allSites = [];
-          if (Array.isArray(data.sites)) {
-            allSites = data.sites;
-          } else if (data.sites) {
-            allSites = [data.sites];
-          }
-          setTwSites(allSites);
-        })
-        .catch(() => setTwSites([]))
-        .finally(() => setLoading(false));
-    }
-  }, [region]);
-
-  // 根據地區分類
-  useEffect(() => {
-    if (region === 'taiwan') {
-      setSelectedSite(null);
-      setLockerDetail(null);
-      setTwAreaSites(
-        twSites.filter(site => site.area_i18n && site.area_i18n['zh-TW'] === twArea)
-      );
-    }
-  }, [twArea, twSites, region]);
-
-  // 點擊地點取得詳細
-  const handleSiteClick = async (site) => {
-    setSelectedSite(site);
-    setLockerDetail(null);
-    setLoading(true);
-    try {
-      const res = await fetch(`/proxy/owlocker_locker/${site.site_no}`);
-      const data = await res.json();
-      setLockerDetail(data);
-    } catch (e) {
-      setLockerDetail(null);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // 日本地區搜尋
   const handleSearch = async () => {
@@ -186,6 +132,13 @@ const LineLocker = () => {
     });
   };
 
+  // 台灣地區搜尋
+  const handleTaiwanSearch = () => {
+    if (!twSearch) return;
+    const url = `https://www.lalalocker.com/zh-TW/store/?q=${encodeURIComponent(twSearch)}&dateFrom=&timeFrom=00%3A00&dateTo=&timeTo=00%3A00`;
+    window.open(url, '_blank');
+  };
+
   return (
     <div className="line-locker-container">
       <header className="locker-header">
@@ -216,131 +169,24 @@ const LineLocker = () => {
         </button>
       </div>
 
-      {/* 台灣地區 */}
+      {/* 台灣地區搜尋 */}
       {region === 'taiwan' && (
-        <>
-          <div className="tw-area-select-group">
-            <label htmlFor="tw-area-select">選擇區域：</label>
-            <select
-              id="tw-area-select"
-              value={twArea}
-              onChange={e => {
-                setTwArea(e.target.value);
-                setSelectedSite(null);
-                setLockerDetail(null);
-              }}
-            >
-              {areaOptions.map(area => (
-                <option key={area} value={area}>{area}</option>
-              ))}
-            </select>
+        <div className="search-form">
+          <div className="form-group">
+            <label>地點</label>
+            <input
+              type="text"
+              value={twSearch}
+              onChange={e => setTwSearch(e.target.value)}
+              placeholder="例如：台北101"
+            />
           </div>
-          <div className="results-container">
-            {loading && <div>載入中...</div>}
-            {!selectedSite && !loading && (
-              <ul className="tw-site-list">
-                {twAreaSites.map(site => (
-                  <li
-                    key={site.site_no}
-                    className="tw-site-item"
-                    onClick={() => handleSiteClick(site)}
-                  >
-                    {site.site_i18n && site.site_i18n['zh-TW']}
-                  </li>
-                ))}
-                {twAreaSites.length === 0 && <li>此區域暫無資料</li>}
-              </ul>
-            )}
-            {/* Locker 詳細 */}
-            {selectedSite && lockerDetail && (
-              <div className="tw-locker-detail">
-                <h3>{selectedSite.site_i18n['zh-TW']}</h3>
-                <div className="tw-locker-table-wrap">
-                  <table className="tw-locker-table">
-                    <thead>
-                      <tr>
-                        <th>規格</th>
-                        <th>剩餘空櫃</th>
-                        <th>總數</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedSite.lockers_type.map((locker, idx) => (
-                        <tr key={locker.size}>
-                          <td>{locker.size}</td>
-                          <td>{locker.empty}</td>
-                          <td>{locker.total}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <div className="tw-locker-update">
-                    更新時間：{selectedSite.updated_at}
-                  </div>
-                </div>
-                {/* 嵌入地圖 */}
-                {lockerDetail.iframe_map && (
-                  <div className="tw-locker-map">
-                    <iframe
-                      src={lockerDetail.iframe_map}
-                      title="地圖"
-                      width="100%"
-                      height="300"
-                      style={{ border: 0, borderRadius: 8 }}
-                      allowFullScreen=""
-                      loading="lazy"
-                    ></iframe>
-                  </div>
-                )}
-                {/* 價格表 */}
-                <div className="tw-locker-price-table-wrap">
-                  <h4>價格表</h4>
-                  <table className="tw-locker-price-table">
-                    <thead>
-                      <tr>
-                        <th>時數區間</th>
-                        <th>尺寸</th>
-                        <th>單位費用</th>
-                        <th>單位時數</th>
-                        <th>規格(cm)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {lockerDetail.price.map((period, idx) =>
-                        period.fee.map((fee, fidx) => (
-                          <tr key={idx + '-' + fidx}>
-                            <td>
-                              {period.min_hour}~{period.max_hour}小時
-                            </td>
-                            <td>{fee.size}</td>
-                            <td>{fee.unit_fee}元</td>
-                            <td>{fee.unit_hour}小時</td>
-                            <td>{fee.spec}</td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                  <div className="tw-locker-note">
-                    最長可寄存 {lockerDetail.lonest_day} 天，逾期 {lockerDetail.over_day} 天將處理。
-                  </div>
-                </div>
-                {/* 支付方式 */}
-                <div className="tw-locker-payment">
-                  <h4>支付方式</h4>
-                  <ul>
-                    {Object.entries(lockerDetail.payment).filter(([k, v]) => v).map(([k]) => (
-                      <li key={k}>{k}</li>
-                    ))}
-                  </ul>
-                </div>
-                <button className="tw-locker-back-btn" onClick={() => setSelectedSite(null)}>
-                  返回地點列表
-                </button>
-              </div>
-            )}
+          <div className="button-group">
+            <button onClick={handleTaiwanSearch} className="search-button">
+              搜尋
+            </button>
           </div>
-        </>
+        </div>
       )}
 
       {/* 日本地區：顯示原本搜尋表單與結果 */}
