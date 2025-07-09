@@ -379,26 +379,140 @@
   background: #f5faff;
 }
 
-@media (max-width: 600px) {
-  .region-select-group {
-    justify-content: center;
-    margin: 0 8px 10px 8px;
-  }
-  .region-select-group label {
-    font-size: 14px;
-  }
-  .region-select-group select {
-    font-size: 14px;
-    padding: 6px 10px;
-  }
-  .region-segmented-group {
-    margin: 18px 0 18px 0;
-  }
-  .region-segment {
-    font-size: 15px;
-    min-width: 80px;
-    padding: 10px 0;
-  }
+/* 台灣站點樣式 */
+.tw-site-list {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tw-site-item {
+  background: #fff;
+  border-radius: 8px;
+  padding: 14px 18px;
+  font-size: 16px;
+  color: var(--primary-color);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px #0001;
+  transition: background 0.2s, color 0.2s;
+}
+
+.tw-site-item:hover {
+  background: var(--primary-light);
+  color: #fff;
+}
+
+.tw-locker-detail {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+  box-shadow: 0 2px 8px #0001;
+}
+
+.tw-locker-table-wrap {
+  margin-bottom: 18px;
+}
+
+.tw-locker-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 8px;
+}
+
+.tw-locker-table th,
+.tw-locker-table td {
+  border: 1px solid #e0e0e0;
+  padding: 8px 10px;
+  text-align: center;
+}
+
+.tw-locker-table th {
+  background: var(--primary-light);
+  color: #333;
+}
+
+.tw-locker-update {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 10px;
+}
+
+.tw-locker-map {
+  margin: 18px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px #0001;
+}
+
+.tw-locker-price-table-wrap {
+  margin: 18px 0;
+}
+
+.tw-locker-price-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 8px;
+}
+
+.tw-locker-price-table th,
+.tw-locker-price-table td {
+  border: 1px solid #e0e0e0;
+  padding: 8px 10px;
+  text-align: center;
+}
+
+.tw-locker-price-table th {
+  background: var(--primary-light);
+  color: #333;
+}
+
+.tw-locker-note {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 10px;
+}
+
+.tw-locker-payment {
+  margin: 12px 0;
+}
+
+.tw-locker-payment ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.tw-locker-payment li {
+  background: var(--primary-light);
+  color: #333;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 14px;
+}
+
+.tw-locker-back-btn {
+  margin-top: 18px;
+  padding: 8px 20px;
+  background: var(--primary-color);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.tw-locker-back-btn:hover {
+  background: var(--primary-dark);
 }
 
 /* 動畫效果 */
@@ -448,5 +562,27 @@
 
   .form-group label {
     color: white;
+  }
+}
+
+@media (max-width: 600px) {
+  .region-select-group {
+    justify-content: center;
+    margin: 0 8px 10px 8px;
+  }
+  .region-select-group label {
+    font-size: 14px;
+  }
+  .region-select-group select {
+    font-size: 14px;
+    padding: 6px 10px;
+  }
+  .region-segmented-group {
+    margin: 18px 0 18px 0;
+  }
+  .region-segment {
+    font-size: 15px;
+    min-width: 80px;
+    padding: 10px 0;
   }
 }
