@@ -340,7 +340,7 @@ const LineLocker = () => {
                     }
                     setSearchParams(prev => ({
                       ...prev,
-                      location: result || '東京都新宿區'
+                      location: '東京都新宿區'
                     }));
                   });
                 }
