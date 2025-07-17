@@ -197,8 +197,11 @@ const LineLocker = () => {
               style={{
                 position: 'absolute',
                 right: '8px',
-                top: '50%',
-                transform: 'translateY(-50%)',
+                top: 0,
+                bottom: 0,
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
@@ -210,14 +213,14 @@ const LineLocker = () => {
                   navigator.geolocation.getCurrentPosition(async pos => {
                     const lat = pos.coords.latitude;
                     const lon = pos.coords.longitude;
-                    // 逆地理查詢
-                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+                    const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
+                    console.log('Nominatim API:', nominatimUrl);
+                    const res = await fetch(nominatimUrl);
                     const data = await res.json();
                     // 只取縣市和區域
                     const address = data.address;
                     let result = '';
                     if (address) {
-                      // address.county: 縣市, address.city/town: 城市, address.suburb/district: 區域
                       const county = address.county || address.state || '';
                       const district = address.suburb || address.city_district || address.district || '';
                       result = `${county}${district ? ' ' + district : ''}`.trim();
