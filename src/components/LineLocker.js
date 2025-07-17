@@ -47,7 +47,7 @@ const LineLocker = () => {
     setTwSearch(value);
     if (value.length > 1) {
       const res = await fetch(
-        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(value)}&language=zh-TW&components=country:tw&key=${GOOGLE_API_KEY}`
+        `/proxy/google_autocomplete?input=${encodeURIComponent(value)}&language=zh-TW&components=country:tw`
       );
       const data = await res.json();
       if (data.status === 'OK') {
@@ -132,7 +132,7 @@ const LineLocker = () => {
             }
             setSearchParams(prev => ({
               ...prev,
-              location: result || '東京都新宿區'
+              location: '東京都新宿區'  //測試用
             }));
           } catch {
             setToast('定位失敗，請稍後再試');
