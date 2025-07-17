@@ -515,6 +515,22 @@
   background: var(--primary-dark);
 }
 
+/* emoji定位按鈕垂直置中微調 */
+.form-group button[aria-label="取得定位"] {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(20%);
+  height: 28px;
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 22px;
+  padding: 0;
+}
+
 /* 動畫效果 */
 @keyframes slideDown {
   from {

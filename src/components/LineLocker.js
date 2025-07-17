@@ -217,13 +217,13 @@ const LineLocker = () => {
                     console.log('Nominatim API:', nominatimUrl);
                     const res = await fetch(nominatimUrl);
                     const data = await res.json();
-                    // 只取縣市和區域
+                    // 只取 city 和 town
                     const address = data.address;
                     let result = '';
                     if (address) {
-                      const county = address.county || address.state || '';
-                      const district = address.suburb || address.city_district || address.district || '';
-                      result = `${county}${district ? ' ' + district : ''}`.trim();
+                      const city = address.city || address.county || address.state || '';
+                      const town = address.town || address.suburb || address.city_district || address.district || '';
+                      result = `${city}${town ? ' ' + town : ''}`.trim();
                     }
                     setTwSearch(result || `${lat},${lon}`);
                   });
