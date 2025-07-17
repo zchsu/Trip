@@ -183,19 +183,29 @@ const LineLocker = () => {
       {/* 台灣地區搜尋 */}
       {region === 'taiwan' && (
         <div className="search-form">
-          <div className="form-group">
+          <div className="form-group" style={{ position: 'relative' }}>
             <label>地點</label>
             <input
               type="text"
               value={twSearch}
               onChange={e => setTwSearch(e.target.value)}
-              placeholder="例如：台北101"
-              style={{ marginRight: '8px' }}
+              placeholder="例如：台北市信義區"
+              style={{ paddingRight: '38px' }}
             />
             <button
               type="button"
-              style={{ marginLeft: '8px' }}
-              onClick={() => {
+              style={{
+                position: 'absolute',
+                right: '8px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '22px',
+                padding: 0,
+              }}
+              onClick={async () => {
                 if (navigator.geolocation) {
                   navigator.geolocation.getCurrentPosition(async pos => {
                     const lat = pos.coords.latitude;
@@ -203,14 +213,23 @@ const LineLocker = () => {
                     // 逆地理查詢
                     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
                     const data = await res.json();
-                    // 取顯示地址
-                    const address = data.display_name || `${lat},${lon}`;
-                    setTwSearch(address);
+                    // 只取縣市和區域
+                    const address = data.address;
+                    let result = '';
+                    if (address) {
+                      // address.county: 縣市, address.city/town: 城市, address.suburb/district: 區域
+                      const county = address.county || address.state || '';
+                      const district = address.suburb || address.city_district || address.district || '';
+                      result = `${county}${district ? ' ' + district : ''}`.trim();
+                    }
+                    setTwSearch(result || `${lat},${lon}`);
                   });
                 }
               }}
+              title="取得定位"
+              aria-label="取得定位"
             >
-              取得定位
+              📍
             </button>
           </div>
           <div className="form-group">
