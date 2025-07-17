@@ -190,7 +190,28 @@ const LineLocker = () => {
               value={twSearch}
               onChange={e => setTwSearch(e.target.value)}
               placeholder="例如：台北101"
+              style={{ marginRight: '8px' }}
             />
+            <button
+              type="button"
+              style={{ marginLeft: '8px' }}
+              onClick={() => {
+                if (navigator.geolocation) {
+                  navigator.geolocation.getCurrentPosition(async pos => {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    // 逆地理查詢
+                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+                    const data = await res.json();
+                    // 取顯示地址
+                    const address = data.display_name || `${lat},${lon}`;
+                    setTwSearch(address);
+                  });
+                }
+              }}
+            >
+              取得定位
+            </button>
           </div>
           <div className="form-group">
             <label>開始時間</label>
