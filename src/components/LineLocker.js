@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import '../styles/LineLocker.css';
 
 const GOOGLE_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+const API_BASE = 'https://tripbackend.vercel.app/api';
 
 const Toast = ({ message, onClose }) => (
   <div className="toast">
@@ -47,7 +48,7 @@ const LineLocker = () => {
     setTwSearch(value);
     if (value.length > 1) {
       const res = await fetch(
-        `/proxy/google_autocomplete?input=${encodeURIComponent(value)}&language=zh-TW&components=country:tw`
+        `${API_BASE}/google_autocomplete?input=${encodeURIComponent(value)}&language=zh-TW&components=country:tw`
       );
       const data = await res.json();
       if (data.status === 'OK') {
@@ -66,7 +67,7 @@ const LineLocker = () => {
     setSearchParams({ ...searchParams, location: value });
     if (value.length > 1) {
       const res = await fetch(
-        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(value)}&language=ja&components=country:jp&key=${GOOGLE_API_KEY}`
+        `${API_BASE}/google_autocomplete?input=${encodeURIComponent(value)}&language=ja&components=country:jp`
       );
       const data = await res.json();
       if (data.status === 'OK') {
