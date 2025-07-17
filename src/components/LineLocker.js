@@ -293,159 +293,182 @@ const LineLocker = () => {
 
       {/* 日本地區：顯示原本搜尋表單與結果 */}
       {region === 'japan' && (
-        <>
-          <div className="search-form">
-            <div className="form-group">
-              <label>地點</label>
-              <input
-                type="text"
-                value={searchParams.location}
-                onChange={(e) => setSearchParams({ ...searchParams, location: e.target.value })}
-                placeholder="例如：東京都新宿區"
-              />
-            </div>
+        <div className="search-form">
+          <div className="form-group" style={{ position: 'relative' }}>
+            <label>地點</label>
+            <input
+              type="text"
+              value={searchParams.location}
+              onChange={e => setSearchParams({ ...searchParams, location: e.target.value })}
+              placeholder="例如：東京都新宿區"
+              style={{ paddingRight: '38px' }}
+            />
+            <button
+              type="button"
+              style={{
+                position: 'absolute',
+                right: '8px',
+                top: '50%',
+                transform: 'translateY(20%)',
+                height: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '22px',
+                padding: 0,
+              }}
+              onClick={async () => {
+                // 預設顯示東京都新宿區
+                setSearchParams(prev => ({ ...prev, location: '東京都新宿區' }));
+                if (navigator.geolocation) {
+                  navigator.geolocation.getCurrentPosition(async pos => {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
+                    console.log('Nominatim API:', nominatimUrl);
+                    const res = await fetch(nominatimUrl);
+                    const data = await res.json();
+                    // 只取 city 和 town
+                    const address = data.address;
+                    let result = '';
+                    if (address) {
+                      const city = address.city || address.county || address.state || '';
+                      const town = address.town || address.suburb || address.city_district || address.district || '';
+                      result = `${city}${town ? ' ' + town : ''}`.trim();
+                    }
+                    setSearchParams(prev => ({
+                      ...prev,
+                      location: result || '東京都新宿區'
+                    }));
+                  });
+                }
+              }}
+              title="取得定位"
+              aria-label="取得定位"
+            >
+              📍
+            </button>
+          </div>
+          <div className="form-group">
+            <label>日期</label>
+            <input
+              type="date"
+              value={searchParams.startDate}
+              onChange={(e) => setSearchParams({ ...searchParams, startDate: e.target.value })}
+              min={new Date().toISOString().split('T')[0]}
+            />
+          </div>
 
-            <div className="form-group">
-              <label>日期</label>
-              <input
-                type="date"
-                value={searchParams.startDate}
-                onChange={(e) => setSearchParams({ ...searchParams, startDate: e.target.value })}
-                min={new Date().toISOString().split('T')[0]}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>使用時間</label>
-              <div className="time-inputs">
-                <div className="time-group">
-                  <span>開始時間</span>
-                  <select
-                    value={searchParams.startTimeHour}
-                    onChange={(e) => setSearchParams({ ...searchParams, startTimeHour: e.target.value })}
-                  >
-                    <option value="">時</option>
-                    {hours.map(hour => (
-                      <option key={`start-${hour}`} value={hour}>{hour}</option>
-                    ))}
-                  </select>
-                  <span>:</span>
-                  <select
-                    value={searchParams.startTimeMin}
-                    onChange={(e) => setSearchParams({ ...searchParams, startTimeMin: e.target.value })}
-                  >
-                    <option value="">分</option>
-                    {minutes.map(min => (
-                      <option key={`start-${min}`} value={min}>{min}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="time-group">
-                  <span>結束時間</span>
-                  <select
-                    value={searchParams.endTimeHour}
-                    onChange={(e) => setSearchParams({ ...searchParams, endTimeHour: e.target.value })}
-                  >
-                    <option value="">時</option>
-                    {hours.map(hour => (
-                      <option key={`end-${hour}`} value={hour}>{hour}</option>
-                    ))}
-                  </select>
-                  <span>:</span>
-                  <select
-                    value={searchParams.endTimeMin}
-                    onChange={(e) => setSearchParams({ ...searchParams, endTimeMin: e.target.value })}
-                  >
-                    <option value="">分</option>
-                    {minutes.map(min => (
-                      <option key={`end-${min}`} value={min}>{min}</option>
-                    ))}
-                  </select>
-                </div>
+          <div className="form-group">
+            <label>使用時間</label>
+            <div className="time-inputs">
+              <div className="time-group">
+                <span>開始時間</span>
+                <select
+                  value={searchParams.startTimeHour}
+                  onChange={(e) => setSearchParams({ ...searchParams, startTimeHour: e.target.value })}
+                >
+                  <option value="">時</option>
+                  {hours.map(hour => (
+                    <option key={`start-${hour}`} value={hour}>{hour}</option>
+                  ))}
+                </select>
+                <span>:</span>
+                <select
+                  value={searchParams.startTimeMin}
+                  onChange={(e) => setSearchParams({ ...searchParams, startTimeMin: e.target.value })}
+                >
+                  <option value="">分</option>
+                  {minutes.map(min => (
+                    <option key={`start-${min}`} value={min}>{min}</option>
+                  ))}
+                </select>
               </div>
-            </div>
 
-            <div className="form-group">
-              <label>行李數量</label>
-              <div className="baggage-inputs">
-                <div className="baggage-counter">
-                  <span>小型行李</span>
-                  <div className="counter-controls">
-                    <button
-                      type="button"
-                      onClick={() => handleBaggageChange('bagSize', 'decrease')}
-                      disabled={searchParams.bagSize === '0'}
-                    >
-                      -
-                    </button>
-                    <span>{searchParams.bagSize}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleBaggageChange('bagSize', 'increase')}
-                      disabled={searchParams.bagSize === '5'}
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-                <div className="baggage-counter">
-                  <span>大型行李</span>
-                  <div className="counter-controls">
-                    <button
-                      type="button"
-                      onClick={() => handleBaggageChange('suitcaseSize', 'decrease')}
-                      disabled={searchParams.suitcaseSize === '0'}
-                    >
-                      -
-                    </button>
-                    <span>{searchParams.suitcaseSize}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleBaggageChange('suitcaseSize', 'increase')}
-                      disabled={searchParams.suitcaseSize === '5'}
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
+              <div className="time-group">
+                <span>結束時間</span>
+                <select
+                  value={searchParams.endTimeHour}
+                  onChange={(e) => setSearchParams({ ...searchParams, endTimeHour: e.target.value })}
+                >
+                  <option value="">時</option>
+                  {hours.map(hour => (
+                    <option key={`end-${hour}`} value={hour}>{hour}</option>
+                  ))}
+                </select>
+                <span>:</span>
+                <select
+                  value={searchParams.endTimeMin}
+                  onChange={(e) => setSearchParams({ ...searchParams, endTimeMin: e.target.value })}
+                >
+                  <option value="">分</option>
+                  {minutes.map(min => (
+                    <option key={`end-${min}`} value={min}>{min}</option>
+                  ))}
+                </select>
               </div>
-            </div>
-
-            {error && <div className="error-message">{error}</div>}
-
-            <div className="button-group">
-              <button onClick={handleSearch} disabled={loading} className="search-button">
-                {loading ? '搜尋中...' : '搜尋'}
-              </button>
-              <button onClick={handleReset} className="reset-button">
-                重設
-              </button>
             </div>
           </div>
 
-          {/* 日本搜尋結果區塊 */}
-          <div className="results-container">
-            {searchResults.map((item, index) => (
-              <div key={index} className="locker-card">
-                <div className="locker-image">
-                  <img src={item.image_url} alt={item.name} />
-                </div>
-                <div className="locker-info">
-                  <h3>{item.name}</h3>
-                  <p className="rating">⭐ {item.rating}</p>
-                  <div className="price-info">
-                    <p>💼 大型行李：{item.suitcase_price}</p>
-                    <p>👜 小型行李：{item.bag_price}</p>
-                  </div>
-                  <a href={item.link} target="_blank" rel="noopener noreferrer">
-                    查看詳情
-                  </a>
+          <div className="form-group">
+            <label>行李數量</label>
+            <div className="baggage-inputs">
+              <div className="baggage-counter">
+                <span>小型行李</span>
+                <div className="counter-controls">
+                  <button
+                    type="button"
+                    onClick={() => handleBaggageChange('bagSize', 'decrease')}
+                    disabled={searchParams.bagSize === '0'}
+                  >
+                    -
+                  </button>
+                  <span>{searchParams.bagSize}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleBaggageChange('bagSize', 'increase')}
+                    disabled={searchParams.bagSize === '5'}
+                  >
+                    +
+                  </button>
                 </div>
               </div>
-            ))}
+              <div className="baggage-counter">
+                <span>大型行李</span>
+                <div className="counter-controls">
+                  <button
+                    type="button"
+                    onClick={() => handleBaggageChange('suitcaseSize', 'decrease')}
+                    disabled={searchParams.suitcaseSize === '0'}
+                  >
+                    -
+                  </button>
+                  <span>{searchParams.suitcaseSize}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleBaggageChange('suitcaseSize', 'increase')}
+                    disabled={searchParams.suitcaseSize === '5'}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-        </>
+
+          {error && <div className="error-message">{error}</div>}
+
+          <div className="button-group">
+            <button onClick={handleSearch} disabled={loading} className="search-button">
+              {loading ? '搜尋中...' : '搜尋'}
+            </button>
+            <button onClick={handleReset} className="reset-button">
+              重設
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
