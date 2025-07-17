@@ -2,11 +2,18 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/LineLocker.css';
 
+const GOOGLE_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+
+const Toast = ({ message, onClose }) => (
+  <div className="toast">
+    {message}
+    <button onClick={onClose} style={{ marginLeft: 8, background: 'none', border: 'none', cursor: 'pointer' }}>✖️</button>
+  </div>
+);
+
 const LineLocker = () => {
   const navigate = useNavigate();
   const [region, setRegion] = useState('japan');
-
-  // 日本地區搜尋用
   const [searchParams, setSearchParams] = useState({
     location: '',
     startDate: '',
@@ -24,10 +31,121 @@ const LineLocker = () => {
 
   // 台灣地區搜尋用
   const [twSearch, setTwSearch] = useState('');
+  // Toast 狀態
+  const [toast, setToast] = useState('');
+  // Google Maps 自動完成
+  const [twSuggestions, setTwSuggestions] = useState([]);
+  const [jpSuggestions, setJpSuggestions] = useState([]);
 
   // 時間選項
   const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
   const minutes = ['00', '15', '30', '45'];
+
+  // 台灣地區地點自動完成
+  const handleTwInputChange = async (e) => {
+    const value = e.target.value;
+    setTwSearch(value);
+    if (value.length > 1) {
+      const res = await fetch(
+        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(value)}&language=zh-TW&components=country:tw&key=${GOOGLE_API_KEY}`
+      );
+      const data = await res.json();
+      if (data.status === 'OK') {
+        setTwSuggestions(data.predictions.map(p => p.description));
+      } else {
+        setTwSuggestions([]);
+      }
+    } else {
+      setTwSuggestions([]);
+    }
+  };
+
+  // 日本地區地點自動完成
+  const handleJpInputChange = async (e) => {
+    const value = e.target.value;
+    setSearchParams({ ...searchParams, location: value });
+    if (value.length > 1) {
+      const res = await fetch(
+        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(value)}&language=ja&components=country:jp&key=${GOOGLE_API_KEY}`
+      );
+      const data = await res.json();
+      if (data.status === 'OK') {
+        setJpSuggestions(data.predictions.map(p => p.description));
+      } else {
+        setJpSuggestions([]);
+      }
+    } else {
+      setJpSuggestions([]);
+    }
+  };
+
+  // 台灣地區定位
+  const handleTwLocate = async () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async pos => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
+          try {
+            const res = await fetch(nominatimUrl);
+            const data = await res.json();
+            const address = data.address;
+            let result = '';
+            if (address) {
+              const city = address.city || address.county || address.state || '';
+              const town = address.town || address.suburb || address.city_district || address.district || '';
+              result = `${city}${town ? ' ' + town : ''}`.trim();
+            }
+            setTwSearch(result || `${lat},${lon}`);
+          } catch {
+            setToast('定位失敗，請稍後再試');
+          }
+        },
+        err => {
+          setToast('定位失敗，請允許定位權限');
+        }
+      );
+    } else {
+      setToast('瀏覽器不支援定位');
+    }
+  };
+
+  // 日本地區定位
+  const handleJpLocate = async () => {
+    setSearchParams(prev => ({ ...prev, location: '東京都新宿區' }));
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async pos => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
+          try {
+            const res = await fetch(nominatimUrl);
+            const data = await res.json();
+            const address = data.address;
+            let result = '';
+            if (address) {
+              const city = address.city || address.county || address.state || '';
+              const town = address.town || address.suburb || address.city_district || address.district || '';
+              result = `${city}${town ? ' ' + town : ''}`.trim();
+            }
+            setSearchParams(prev => ({
+              ...prev,
+              location: result || '東京都新宿區'
+            }));
+          } catch {
+            setToast('定位失敗，請稍後再試');
+          }
+        },
+        err => {
+          setToast('定位失敗，請允許定位權限');
+        }
+      );
+    } else {
+      setToast('瀏覽器不支援定位');
+    }
+  };
 
   // 日本地區搜尋
   const handleSearch = async () => {
@@ -152,6 +270,7 @@ const LineLocker = () => {
 
   return (
     <div className="line-locker-container">
+      {toast && <Toast message={toast} onClose={() => setToast('')} />}
       <header className="locker-header">
         <div className="header-content">
           <h1>寄物點查找</h1>
@@ -188,7 +307,7 @@ const LineLocker = () => {
             <input
               type="text"
               value={twSearch}
-              onChange={e => setTwSearch(e.target.value)}
+              onChange={handleTwInputChange}
               placeholder="例如：台北市信義區"
               style={{ paddingRight: '38px' }}
             />
@@ -197,9 +316,9 @@ const LineLocker = () => {
               style={{
                 position: 'absolute',
                 right: '8px',
-                top: 0,
-                bottom: 0,
-                height: '100%',
+                top: '50%',
+                transform: 'translateY(20%)',
+                height: '28px',
                 display: 'flex',
                 alignItems: 'center',
                 background: 'none',
@@ -208,32 +327,20 @@ const LineLocker = () => {
                 fontSize: '22px',
                 padding: 0,
               }}
-              onClick={async () => {
-                if (navigator.geolocation) {
-                  navigator.geolocation.getCurrentPosition(async pos => {
-                    const lat = pos.coords.latitude;
-                    const lon = pos.coords.longitude;
-                    const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
-                    console.log('Nominatim API:', nominatimUrl);
-                    const res = await fetch(nominatimUrl);
-                    const data = await res.json();
-                    // 只取 city 和 town
-                    const address = data.address;
-                    let result = '';
-                    if (address) {
-                      const city = address.city || address.county || address.state || '';
-                      const town = address.town || address.suburb || address.city_district || address.district || '';
-                      result = `${city}${town ? ' ' + town : ''}`.trim();
-                    }
-                    setTwSearch(result || `${lat},${lon}`);
-                  });
-                }
-              }}
+              onClick={handleTwLocate}
               title="取得定位"
               aria-label="取得定位"
             >
               📍
             </button>
+            {/* 自動完成建議 */}
+            {twSuggestions.length > 0 && (
+              <ul className="autocomplete-list">
+                {twSuggestions.map((s, i) => (
+                  <li key={i} onClick={() => { setTwSearch(s); setTwSuggestions([]); }}>{s}</li>
+                ))}
+              </ul>
+            )}
           </div>
           <div className="form-group">
             <label>開始時間</label>
@@ -291,7 +398,7 @@ const LineLocker = () => {
         </div>
       )}
 
-      {/* 日本地區：顯示原本搜尋表單與結果 */}
+      {/* 日本地區搜尋 */}
       {region === 'japan' && (
         <div className="search-form">
           <div className="form-group" style={{ position: 'relative' }}>
@@ -299,7 +406,7 @@ const LineLocker = () => {
             <input
               type="text"
               value={searchParams.location}
-              onChange={e => setSearchParams({ ...searchParams, location: e.target.value })}
+              onChange={handleJpInputChange}
               placeholder="例如：東京都新宿區"
               style={{ paddingRight: '38px' }}
             />
@@ -319,37 +426,23 @@ const LineLocker = () => {
                 fontSize: '22px',
                 padding: 0,
               }}
-              onClick={async () => {
-                // 預設顯示東京都新宿區
-                setSearchParams(prev => ({ ...prev, location: '東京都新宿區' }));
-                if (navigator.geolocation) {
-                  navigator.geolocation.getCurrentPosition(async pos => {
-                    const lat = pos.coords.latitude;
-                    const lon = pos.coords.longitude;
-                    const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
-                    console.log('Nominatim API:', nominatimUrl);
-                    const res = await fetch(nominatimUrl);
-                    const data = await res.json();
-                    // 只取 city 和 town
-                    const address = data.address;
-                    let result = '';
-                    if (address) {
-                      const city = address.city || address.county || address.state || '';
-                      const town = address.town || address.suburb || address.city_district || address.district || '';
-                      result = `${city}${town ? ' ' + town : ''}`.trim();
-                    }
-                    setSearchParams(prev => ({
-                      ...prev,
-                      location: '東京都新宿區'
-                    }));
-                  });
-                }
-              }}
+              onClick={handleJpLocate}
               title="取得定位"
               aria-label="取得定位"
             >
               📍
             </button>
+            {/* 自動完成建議 */}
+            {jpSuggestions.length > 0 && (
+              <ul className="autocomplete-list">
+                {jpSuggestions.map((s, i) => (
+                  <li key={i} onClick={() => {
+                    setSearchParams(prev => ({ ...prev, location: s }));
+                    setJpSuggestions([]);
+                  }}>{s}</li>
+                ))}
+              </ul>
+            )}
           </div>
           <div className="form-group">
             <label>日期</label>
