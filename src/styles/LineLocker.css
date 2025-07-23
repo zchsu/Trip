@@ -318,6 +318,12 @@
   border-radius: 12px;
   padding: 16px 20px;
   box-shadow: 0 2px 8px #0001;
+  list-style: none;
+  padding-left: 0;
+  margin-left: 0;
+  width: 100%;
+  background: none;
+  text-align: left;
 }
 
 .taiwan-locker-list h3 {
@@ -641,4 +647,29 @@
 
 .autocomplete-list li:hover {
   background: #f5f5f5;
+}
+
+/* 地名列表靠左且不置中 */
+.tw-locker-list {
+  list-style: none;
+  padding-left: 0;
+  margin-left: 0;
+  width: 100%;
+  background: none;
+  text-align: left;
+}
+
+.locker-site-btn {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 1em;
+  padding: 8px 0;
+  color: #222;
+  white-space: normal;
+  word-break: break-all;
+  justify-content: flex-start;
 }

@@ -326,13 +326,13 @@ const LineLocker = () => {
             {loading ? (
               <div>載入中...</div>
             ) : (
-              <ul className="tw-locker-list">
+              <ul className="tw-locker-list" style={{paddingLeft: 0, marginLeft: 0}}>
                 {twSelectedRegion === ''
                   ? <li>請先選擇地區</li>
                   : filteredTwLockers.length === 0
                     ? <li>此地區暫無寄物點</li>
                     : filteredTwLockers.map(site => (
-                        <li key={site.site_no}>
+                        <li key={site.site_no} style={{overflow: 'visible', padding: '0'}}>
                           <button
                             type="button"
                             className="locker-site-btn"
@@ -343,7 +343,12 @@ const LineLocker = () => {
                               textAlign: 'left',
                               width: '100%',
                               fontSize: 'inherit',
-                              padding: '4px 0'
+                              padding: '8px 0',
+                              color: '#222',
+                              whiteSpace: 'normal',
+                              wordBreak: 'break-all',
+                              justifyContent: 'flex-start',
+                              display: 'block'
                             }}
                             onClick={() => handleSiteClick(site.site_no)}
                           >
