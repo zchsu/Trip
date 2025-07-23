@@ -28,12 +28,12 @@ const LineLocker = () => {
     suitcaseSize: '0'
   });
   const [searchResults, setSearchResults] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   // 台灣地區搜尋用
   const [twSearch, setTwSearch] = useState('');
   const [twSelectedRegion, setTwSelectedRegion] = useState('北部地區');
+  const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState('');
   const [twLockerData, setTwLockerData] = useState([]);
 
@@ -308,7 +308,7 @@ const LineLocker = () => {
                   key={r}
                   type="button"
                   className={`region-select${twSelectedRegion === r ? ' active' : ''}`}
-                  onClick={() => handleRegionSelect(r)}
+                  onClick={() => setTwSelectedRegion(r)}
                 >
                   {r.replace('地區', '')}
                 </button>
@@ -333,11 +333,6 @@ const LineLocker = () => {
                 }
               </ul>
             )}
-          </div>
-          <div className="button-group">
-            <button onClick={handleTaiwanSearch} className="search-button">
-              搜尋
-            </button>
           </div>
         </div>
       )}
