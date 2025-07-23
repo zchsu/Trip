@@ -46,7 +46,11 @@ const LineLocker = () => {
     fetch('https://tripapi-henna.vercel.app/api/owlocker_info')
       .then(res => res.json())
       .then(data => {
-        setTwLockerData(data.sites || []);
+        // 修正：合併所有 sites
+        const allSites = Array.isArray(data)
+          ? data.flatMap(item => item.sites || [])
+          : [];
+        setTwLockerData(allSites);
       })
       .catch(() => setToast('台灣寄物點資料取得失敗'));
   }, []);
