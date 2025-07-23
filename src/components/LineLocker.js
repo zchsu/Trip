@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/LineLocker.css';
 
-const GOOGLE_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 const API_BASE = 'https://tripbackend.vercel.app/api';
 
 const Toast = ({ message, onClose }) => (
@@ -32,53 +31,23 @@ const LineLocker = () => {
 
   // 台灣地區搜尋用
   const [twSearch, setTwSearch] = useState('');
-  // Toast 狀態
+  const [twSelectedRegion, setTwSelectedRegion] = useState('北部地區');
   const [toast, setToast] = useState('');
-  // Google Maps 自動完成
-  const [twSuggestions, setTwSuggestions] = useState([]);
-  const [jpSuggestions, setJpSuggestions] = useState([]);
+  const [twLockerData, setTwLockerData] = useState([]);
 
   // 時間選項
   const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
   const minutes = ['00', '15', '30', '45'];
 
-  // 台灣地區地點自動完成
-  const handleTwInputChange = async (e) => {
-    const value = e.target.value;
-    setTwSearch(value);
-    if (value.length > 1) {
-      const res = await fetch(
-        `${API_BASE}/google_autocomplete?input=${encodeURIComponent(value)}&language=zh-TW&components=country:tw`
-      );
-      const data = await res.json();
-      if (data.status === 'OK') {
-        setTwSuggestions(data.predictions.map(p => p.description));
-      } else {
-        setTwSuggestions([]);
-      }
-    } else {
-      setTwSuggestions([]);
-    }
-  };
-
-  // 日本地區地點自動完成
-  const handleJpInputChange = async (e) => {
-    const value = e.target.value;
-    setSearchParams({ ...searchParams, location: value });
-    if (value.length > 1) {
-      const res = await fetch(
-        `${API_BASE}/google_autocomplete?input=${encodeURIComponent(value)}&language=ja&components=country:jp`
-      );
-      const data = await res.json();
-      if (data.status === 'OK') {
-        setJpSuggestions(data.predictions.map(p => p.description));
-      } else {
-        setJpSuggestions([]);
-      }
-    } else {
-      setJpSuggestions([]);
-    }
-  };
+  // 取得台灣 locker 資料
+  useEffect(() => {
+    fetch('https://tripapi-henna.vercel.app/api/owlocker_info')
+      .then(res => res.json())
+      .then(data => {
+        setTwLockerData(data.sites || []);
+      })
+      .catch(() => setToast('台灣寄物點資料取得失敗'));
+  }, []);
 
   // 台灣地區定位
   const handleTwLocate = async () => {
@@ -269,6 +238,11 @@ const LineLocker = () => {
     window.open(url, '_blank');
   };
 
+  // 篩選出所選地區的 locker
+  const filteredTwLockers = twLockerData.filter(
+    site => site.area_i18n?.['zh-TW'] === twSelectedRegion
+  );
+
   return (
     <div className="line-locker-container">
       {toast && <Toast message={toast} onClose={() => setToast('')} />}
@@ -308,7 +282,7 @@ const LineLocker = () => {
             <input
               type="text"
               value={twSearch}
-              onChange={handleTwInputChange}
+              onChange={e => setTwSearch(e.target.value)}
               placeholder="例如：台北市信義區"
               style={{ paddingRight: '38px' }}
             />
@@ -334,14 +308,6 @@ const LineLocker = () => {
             >
               📍
             </button>
-            {/* 自動完成建議 */}
-            {twSuggestions.length > 0 && (
-              <ul className="autocomplete-list">
-                {twSuggestions.map((s, i) => (
-                  <li key={i} onClick={() => { setTwSearch(s); setTwSuggestions([]); }}>{s}</li>
-                ))}
-              </ul>
-            )}
           </div>
           <div className="form-group">
             <label>開始時間</label>
@@ -391,6 +357,35 @@ const LineLocker = () => {
               </select>
             </div>
           </div>
+          <div className="form-group">
+            <label>地區篩選</label>
+            <div className="region-select-group">
+              {['北部地區', '中部地區', '南部地區', '離島地區'].map(r => (
+                <button
+                  key={r}
+                  type="button"
+                  className={`region-select${twSelectedRegion === r ? ' active' : ''}`}
+                  onClick={() => setTwSelectedRegion(r)}
+                >
+                  {r.replace('地區', '')}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="form-group">
+            <label>地名列表</label>
+            <ul className="tw-locker-list">
+              {filteredTwLockers.length === 0 ? (
+                <li>此地區暫無寄物點</li>
+              ) : (
+                filteredTwLockers.map(site => (
+                  <li key={site.site_no}>
+                    {site.site_i18n?.['zh-TW'] || site.site_no}
+                  </li>
+                ))
+              )}
+            </ul>
+          </div>
           <div className="button-group">
             <button onClick={handleTaiwanSearch} className="search-button">
               搜尋
@@ -407,7 +402,7 @@ const LineLocker = () => {
             <input
               type="text"
               value={searchParams.location}
-              onChange={handleJpInputChange}
+              onChange={e => setSearchParams({ ...searchParams, location: e.target.value })}
               placeholder="例如：東京都新宿區"
               style={{ paddingRight: '38px' }}
             />
@@ -433,17 +428,6 @@ const LineLocker = () => {
             >
               📍
             </button>
-            {/* 自動完成建議 */}
-            {jpSuggestions.length > 0 && (
-              <ul className="autocomplete-list">
-                {jpSuggestions.map((s, i) => (
-                  <li key={i} onClick={() => {
-                    setSearchParams(prev => ({ ...prev, location: s }));
-                    setJpSuggestions([]);
-                  }}>{s}</li>
-                ))}
-              </ul>
-            )}
           </div>
           <div className="form-group">
             <label>日期</label>
