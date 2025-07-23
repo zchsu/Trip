@@ -36,6 +36,7 @@ const LineLocker = () => {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState('');
   const [twLockerData, setTwLockerData] = useState([]);
+  const [expandedSite, setExpandedSite] = useState(null); // 新增：收合狀態
 
   // 時間選項
   const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
@@ -266,6 +267,11 @@ const LineLocker = () => {
     site => site.area_i18n?.['zh-TW'] === twSelectedRegion
   );
 
+  // 點擊地名收合/展開
+  const handleSiteClick = (site_no) => {
+    setExpandedSite(expandedSite === site_no ? null : site_no);
+  };
+
   return (
     <div className="line-locker-container">
       {toast && <Toast message={toast} onClose={() => setToast('')} />}
@@ -327,7 +333,46 @@ const LineLocker = () => {
                     ? <li>此地區暫無寄物點</li>
                     : filteredTwLockers.map(site => (
                         <li key={site.site_no}>
-                          {site.site_i18n?.['zh-TW'] || site.site_no}
+                          <button
+                            type="button"
+                            className="locker-site-btn"
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              width: '100%',
+                              fontSize: 'inherit',
+                              padding: '4px 0'
+                            }}
+                            onClick={() => handleSiteClick(site.site_no)}
+                          >
+                            {site.site_i18n?.['zh-TW'] || site.site_no}
+                            {expandedSite === site.site_no ? ' ▲' : ' ▼'}
+                          </button>
+                          {expandedSite === site.site_no && (
+                            <div className="locker-detail" style={{ margin: '8px 0 12px 12px', fontSize: '0.95em', background: '#f8f8f8', borderRadius: '6px', padding: '8px' }}>
+                              <div>更新時間：{site.updated_at}</div>
+                              <table style={{ width: '100%', marginTop: '6px', borderCollapse: 'collapse' }}>
+                                <thead>
+                                  <tr>
+                                    <th style={{ textAlign: 'left', padding: '2px 6px' }}>尺寸</th>
+                                    <th style={{ textAlign: 'right', padding: '2px 6px' }}>總數</th>
+                                    <th style={{ textAlign: 'right', padding: '2px 6px' }}>空櫃</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {site.lockers_type.map(locker => (
+                                    <tr key={locker.size}>
+                                      <td style={{ padding: '2px 6px' }}>{locker.size}</td>
+                                      <td style={{ textAlign: 'right', padding: '2px 6px' }}>{locker.total}</td>
+                                      <td style={{ textAlign: 'right', padding: '2px 6px' }}>{locker.empty}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
                         </li>
                       ))
                 }
