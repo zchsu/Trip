@@ -331,55 +331,61 @@ const LineLocker = () => {
                   ? <li>請先選擇地區</li>
                   : filteredTwLockers.length === 0
                     ? <li>此地區暫無寄物點</li>
-                    : filteredTwLockers.map(site => (
-                        <li key={site.site_no} style={{overflow: 'visible', padding: '0'}}>
-                          <button
-                            type="button"
-                            className="locker-site-btn"
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              cursor: 'pointer',
-                              textAlign: 'left',
-                              width: '100%',
-                              fontSize: 'inherit',
-                              padding: '8px 0',
-                              color: '#222',
-                              whiteSpace: 'normal',
-                              wordBreak: 'break-all',
-                              justifyContent: 'flex-start',
-                              display: 'block'
-                            }}
-                            onClick={() => handleSiteClick(site.site_no)}
-                          >
-                            {site.site_i18n?.['zh-TW'] || site.site_no}
-                            {expandedSite === site.site_no ? ' ▲' : ' ▼'}
-                          </button>
-                          {expandedSite === site.site_no && (
-                            <div className="locker-detail" style={{ margin: '8px 0 12px 12px', fontSize: '0.95em', background: '#f8f8f8', borderRadius: '6px', padding: '8px' }}>
-                              <div>更新時間：{site.updated_at}</div>
-                              <table style={{ width: '100%', marginTop: '6px', borderCollapse: 'collapse' }}>
-                                <thead>
-                                  <tr>
-                                    <th style={{ textAlign: 'left', padding: '2px 6px' }}>尺寸</th>
-                                    <th style={{ textAlign: 'right', padding: '2px 6px' }}>總數</th>
-                                    <th style={{ textAlign: 'right', padding: '2px 6px' }}>空櫃</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {site.lockers_type.map(locker => (
-                                    <tr key={locker.size}>
-                                      <td style={{ padding: '2px 6px' }}>{locker.size}</td>
-                                      <td style={{ textAlign: 'right', padding: '2px 6px' }}>{locker.total}</td>
-                                      <td style={{ textAlign: 'right', padding: '2px 6px' }}>{locker.empty}</td>
+                    : filteredTwLockers.map(site => {
+                        // 只顯示地名，不顯示前面三碼編號
+                        const fullName = site.site_i18n?.['zh-TW'] || site.site_no;
+                        // 用正則移除前面三碼及空格（如 "101 ~ 102 台北101 ( 1F )" => "台北101 ( 1F )"）
+                        const displayName = fullName.replace(/^\d+\s*~\s*\d+\s*/,'').replace(/^\d+\s*/, '');
+                        return (
+                          <li key={site.site_no} style={{overflow: 'visible', padding: '0'}}>
+                            <button
+                              type="button"
+                              className="locker-site-btn"
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                width: '100%',
+                                fontSize: 'inherit',
+                                padding: '8px 0',
+                                color: '#222',
+                                whiteSpace: 'normal',
+                                wordBreak: 'break-all',
+                                justifyContent: 'flex-start',
+                                display: 'block'
+                              }}
+                              onClick={() => handleSiteClick(site.site_no)}
+                            >
+                              {displayName}
+                              {expandedSite === site.site_no ? ' ▲' : ' ▼'}
+                            </button>
+                            {expandedSite === site.site_no && (
+                              <div className="locker-detail" style={{ margin: '8px 0 12px 12px', fontSize: '0.95em', background: '#f8f8f8', borderRadius: '6px', padding: '8px' }}>
+                                <div>更新時間：{site.updated_at}</div>
+                                <table style={{ width: '100%', marginTop: '6px', borderCollapse: 'collapse' }}>
+                                  <thead>
+                                    <tr>
+                                      <th style={{ textAlign: 'left', padding: '2px 6px' }}>尺寸</th>
+                                      <th style={{ textAlign: 'right', padding: '2px 6px' }}>總數</th>
+                                      <th style={{ textAlign: 'right', padding: '2px 6px' }}>空櫃</th>
                                     </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          )}
-                        </li>
-                      ))
+                                  </thead>
+                                  <tbody>
+                                    {site.lockers_type.map(locker => (
+                                      <tr key={locker.size}>
+                                        <td style={{ padding: '2px 6px' }}>{locker.size}</td>
+                                        <td style={{ textAlign: 'right', padding: '2px 6px' }}>{locker.total}</td>
+                                        <td style={{ textAlign: 'right', padding: '2px 6px' }}>{locker.empty}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </li>
+                        );
+                      })
                 }
               </ul>
             )}
