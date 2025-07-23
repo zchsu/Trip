@@ -37,6 +37,8 @@ const LineLocker = () => {
   const [toast, setToast] = useState('');
   const [twLockerData, setTwLockerData] = useState([]);
   const [expandedSite, setExpandedSite] = useState(null); // 新增：收合狀態
+  const [lockerDetail, setLockerDetail] = useState({});
+  const [lockerDetailLoading, setLockerDetailLoading] = useState(false);
 
   // 時間選項
   const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
@@ -268,8 +270,25 @@ const LineLocker = () => {
   );
 
   // 點擊地名收合/展開
-  const handleSiteClick = (site_no) => {
-    setExpandedSite(expandedSite === site_no ? null : site_no);
+  const handleSiteClick = async (site_no) => {
+    // 展開/收合
+    if (expandedSite === site_no) {
+      setExpandedSite(null);
+      setLockerDetail({});
+      return;
+    }
+    setExpandedSite(site_no);
+    setLockerDetailLoading(true);
+    setLockerDetail({});
+    try {
+      const res = await fetch(`https://tripapi-henna.vercel.app/api/owlocker_locker?site_no=${site_no}`);
+      const data = await res.json();
+      setLockerDetail(data);
+    } catch {
+      setLockerDetail({ error: '寄物點詳細資料取得失敗' });
+    } finally {
+      setLockerDetailLoading(false);
+    }
   };
 
   return (
@@ -332,9 +351,7 @@ const LineLocker = () => {
                   : filteredTwLockers.length === 0
                     ? <li>此地區暫無寄物點</li>
                     : filteredTwLockers.map(site => {
-                        // 只顯示地名，不顯示前面三碼編號
                         const fullName = site.site_i18n?.['zh-TW'] || site.site_no;
-                        // 用正則移除前面三碼及空格（如 "101 ~ 102 台北101 ( 1F )" => "台北101 ( 1F )"）
                         const displayName = fullName.replace(/^\d+\s*~\s*\d+\s*/,'').replace(/^\d+\s*/, '');
                         return (
                           <li key={site.site_no} style={{overflow: 'visible', padding: '0'}}>
@@ -381,6 +398,62 @@ const LineLocker = () => {
                                     ))}
                                   </tbody>
                                 </table>
+                                {/* 顯示更多資訊 */}
+                                {lockerDetailLoading ? (
+                                  <div style={{ marginTop: '8px' }}>詳細資料載入中...</div>
+                                ) : lockerDetail.error ? (
+                                  <div style={{ marginTop: '8px', color: 'red' }}>{lockerDetail.error}</div>
+                                ) : lockerDetail.iframe_map ? (
+                                  <div style={{ marginTop: '12px' }}>
+                                    <div>小地圖：</div>
+                                    <iframe
+                                      src={lockerDetail.iframe_map}
+                                      title="Locker Map"
+                                      width="100%"
+                                      height="200"
+                                      style={{ border: 0, borderRadius: '6px', marginBottom: '8px' }}
+                                      allowFullScreen
+                                    />
+                                    <div>收費標準：</div>
+                                    <table style={{ width: '100%', marginTop: '6px', borderCollapse: 'collapse', background: '#fff' }}>
+                                      <thead>
+                                        <tr>
+                                          <th style={{ textAlign: 'left', padding: '2px 6px' }}>時段</th>
+                                          <th style={{ textAlign: 'left', padding: '2px 6px' }}>尺寸</th>
+                                          <th style={{ textAlign: 'right', padding: '2px 6px' }}>單價</th>
+                                          <th style={{ textAlign: 'right', padding: '2px 6px' }}>規格</th>
+                                          <th style={{ textAlign: 'right', padding: '2px 6px' }}>單位(小時)</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {lockerDetail.price?.map((period, idx) =>
+                                          period.fee.map(fee => (
+                                            <tr key={fee.size + idx}>
+                                              <td style={{ padding: '2px 6px' }}>
+                                                {period.min_hour}~{period.max_hour}hr
+                                              </td>
+                                              <td style={{ padding: '2px 6px' }}>{fee.size}</td>
+                                              <td style={{ textAlign: 'right', padding: '2px 6px' }}>{fee.unit_fee}</td>
+                                              <td style={{ textAlign: 'right', padding: '2px 6px' }}>{fee.spec}</td>
+                                              <td style={{ textAlign: 'right', padding: '2px 6px' }}>{fee.unit_hour}</td>
+                                            </tr>
+                                          ))
+                                        )}
+                                      </tbody>
+                                    </table>
+                                    <div style={{ marginTop: '8px' }}>
+                                      <strong>付款方式：</strong>
+                                      {lockerDetail.payment &&
+                                        Object.entries(lockerDetail.payment)
+                                          .filter(([k, v]) => v)
+                                          .map(([k]) => k)
+                                          .join('、')}
+                                    </div>
+                                    <div style={{ marginTop: '4px', fontSize: '0.95em', color: '#888' }}>
+                                      最長寄存天數：{lockerDetail.lonest_day}天，逾期天數：{lockerDetail.over_day}天
+                                    </div>
+                                  </div>
+                                ) : null}
                               </div>
                             )}
                           </li>
