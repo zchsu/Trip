@@ -11,6 +11,8 @@ const Toast = ({ message, onClose }) => (
   </div>
 );
 
+const TAIWAN_REGIONS = ['北部地區', '中部地區', '南部地區', '離島地區'];
+
 const LineLocker = () => {
   const navigate = useNavigate();
   const [region, setRegion] = useState('japan');
@@ -238,7 +240,24 @@ const LineLocker = () => {
     window.open(url, '_blank');
   };
 
-  // 篩選出所選地區的 locker
+  // 使用者選擇地區後才 fetch 資料
+  const handleRegionSelect = async (regionKey) => {
+    setTwSelectedRegion(regionKey);
+    setLoading(true);
+    setTwLockerData([]);
+    setToast('');
+    try {
+      const res = await fetch('https://tripapi-henna.vercel.app/api/owlocker_info');
+      const data = await res.json();
+      setTwLockerData(data.sites || []);
+    } catch {
+      setToast('台灣寄物點資料取得失敗');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 依地區篩選
   const filteredTwLockers = twLockerData.filter(
     site => site.area_i18n?.['zh-TW'] === twSelectedRegion
   );
@@ -277,95 +296,15 @@ const LineLocker = () => {
       {/* 台灣地區搜尋 */}
       {region === 'taiwan' && (
         <div className="search-form">
-          <div className="form-group" style={{ position: 'relative' }}>
-            <label>地點</label>
-            <input
-              type="text"
-              value={twSearch}
-              onChange={e => setTwSearch(e.target.value)}
-              placeholder="例如：台北市信義區"
-              style={{ paddingRight: '38px' }}
-            />
-            <button
-              type="button"
-              style={{
-                position: 'absolute',
-                right: '8px',
-                top: '50%',
-                transform: 'translateY(20%)',
-                height: '28px',
-                display: 'flex',
-                alignItems: 'center',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '22px',
-                padding: 0,
-              }}
-              onClick={handleTwLocate}
-              title="取得定位"
-              aria-label="取得定位"
-            >
-              📍
-            </button>
-          </div>
-          <div className="form-group">
-            <label>開始時間</label>
-            <div className="time-group">
-              <select
-                value={searchParams.startTimeHour}
-                onChange={e => setSearchParams({ ...searchParams, startTimeHour: e.target.value })}
-              >
-                <option value="">時</option>
-                {hours.map(hour => (
-                  <option key={`tw-start-${hour}`} value={hour}>{hour}</option>
-                ))}
-              </select>
-              <span>:</span>
-              <select
-                value={searchParams.startTimeMin}
-                onChange={e => setSearchParams({ ...searchParams, startTimeMin: e.target.value })}
-              >
-                <option value="">分</option>
-                {minutes.map(min => (
-                  <option key={`tw-start-${min}`} value={min}>{min}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="form-group">
-            <label>結束時間</label>
-            <div className="time-group">
-              <select
-                value={searchParams.endTimeHour}
-                onChange={e => setSearchParams({ ...searchParams, endTimeHour: e.target.value })}
-              >
-                <option value="">時</option>
-                {hours.map(hour => (
-                  <option key={`tw-end-${hour}`} value={hour}>{hour}</option>
-                ))}
-              </select>
-              <span>:</span>
-              <select
-                value={searchParams.endTimeMin}
-                onChange={e => setSearchParams({ ...searchParams, endTimeMin: e.target.value })}
-              >
-                <option value="">分</option>
-                {minutes.map(min => (
-                  <option key={`tw-end-${min}`} value={min}>{min}</option>
-                ))}
-              </select>
-            </div>
-          </div>
           <div className="form-group">
             <label>地區篩選</label>
             <div className="region-select-group">
-              {['北部地區', '中部地區', '南部地區', '離島地區'].map(r => (
+              {TAIWAN_REGIONS.map(r => (
                 <button
                   key={r}
                   type="button"
                   className={`region-select${twSelectedRegion === r ? ' active' : ''}`}
-                  onClick={() => setTwSelectedRegion(r)}
+                  onClick={() => handleRegionSelect(r)}
                 >
                   {r.replace('地區', '')}
                 </button>
@@ -374,17 +313,22 @@ const LineLocker = () => {
           </div>
           <div className="form-group">
             <label>地名列表</label>
-            <ul className="tw-locker-list">
-              {filteredTwLockers.length === 0 ? (
-                <li>此地區暫無寄物點</li>
-              ) : (
-                filteredTwLockers.map(site => (
-                  <li key={site.site_no}>
-                    {site.site_i18n?.['zh-TW'] || site.site_no}
-                  </li>
-                ))
-              )}
-            </ul>
+            {loading ? (
+              <div>載入中...</div>
+            ) : (
+              <ul className="tw-locker-list">
+                {twSelectedRegion === ''
+                  ? <li>請先選擇地區</li>
+                  : filteredTwLockers.length === 0
+                    ? <li>此地區暫無寄物點</li>
+                    : filteredTwLockers.map(site => (
+                        <li key={site.site_no}>
+                          {site.site_i18n?.['zh-TW'] || site.site_no}
+                        </li>
+                      ))
+                }
+              </ul>
+            )}
           </div>
           <div className="button-group">
             <button onClick={handleTaiwanSearch} className="search-button">
