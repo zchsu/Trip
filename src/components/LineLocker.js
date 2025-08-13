@@ -415,27 +415,27 @@ const LineLocker = () => {
                                       allowFullScreen
                                     />
                                     <div style={{ marginTop: '8px', fontWeight: 'bold' }}>收費標準：</div>
-                                    <table style={{ width: '100%', marginTop: '6px', borderCollapse: 'collapse', background: '#fff', fontSize: '0.98em' }}>
+                                    <table className="locker-fee-table">
                                       <thead>
                                         <tr>
-                                          <th style={{ textAlign: 'center', padding: '4px 6px' }}>租用時段</th>
-                                          <th style={{ textAlign: 'center', padding: '4px 6px' }}>尺寸</th>
-                                          <th style={{ textAlign: 'center', padding: '4px 6px' }}>單價 (元/小時)</th>
-                                          <th style={{ textAlign: 'center', padding: '4px 6px' }}>規格 (cm)</th>
+                                          <th>租用時段</th>
+                                          <th>尺寸</th>
+                                          <th>單價 (元/小時)</th>
+                                          <th>規格 (cm)</th>
                                         </tr>
                                       </thead>
                                       <tbody>
                                         {lockerDetail.price?.map((period, idx) =>
                                           period.fee.map((fee, feeIdx) => (
                                             <tr key={fee.size + idx}>
-                                              <td style={{ textAlign: 'center', padding: '4px 6px' }}>
+                                              <td>
                                                 {feeIdx === 0
                                                   ? `${period.min_hour}–${period.max_hour} 小時`
                                                   : ''}
                                               </td>
-                                              <td style={{ textAlign: 'center', padding: '4px 6px' }}>{fee.size}</td>
-                                              <td style={{ textAlign: 'center', padding: '4px 6px' }}>{fee.unit_fee}</td>
-                                              <td style={{ textAlign: 'center', padding: '4px 6px' }}>{fee.spec}</td>
+                                              <td>{fee.size}</td>
+                                              <td>{fee.unit_fee}</td>
+                                              <td>{fee.spec}</td>
                                             </tr>
                                           ))
                                         )}

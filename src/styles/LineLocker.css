@@ -673,3 +673,39 @@
   word-break: break-all;
   justify-content: flex-start;
 }
+
+/* 收費標準表格美化 */
+.locker-fee-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  background: #fff;
+  font-size: 1em;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.locker-fee-table th, .locker-fee-table td {
+  padding: 8px 10px;
+  text-align: center;
+  border-bottom: 1px solid #eee;
+}
+
+.locker-fee-table th {
+  background: #f2f6fa;
+  color: #333;
+  font-weight: 600;
+}
+
+.locker-fee-table tr:last-child td {
+  border-bottom: none;
+}
+
+.locker-fee-table td {
+  color: #222;
+}
+
+.locker-fee-table tr:nth-child(even) td {
+  background: #f9fbfd;
+}
