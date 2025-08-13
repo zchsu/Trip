@@ -403,7 +403,7 @@ const LineLocker = () => {
                                   <div style={{ marginTop: '8px' }}>詳細資料載入中...</div>
                                 ) : lockerDetail.error ? (
                                   <div style={{ marginTop: '8px', color: 'red' }}>{lockerDetail.error}</div>
-                                ) : lockerDetail.iframe_map ? (
+                                ) : lockerDetail.iframe_map && (
                                   <div style={{ marginTop: '12px' }}>
                                     <div>小地圖：</div>
                                     <iframe
@@ -414,28 +414,28 @@ const LineLocker = () => {
                                       style={{ border: 0, borderRadius: '6px', marginBottom: '8px' }}
                                       allowFullScreen
                                     />
-                                    <div>收費標準：</div>
-                                    <table style={{ width: '100%', marginTop: '6px', borderCollapse: 'collapse', background: '#fff' }}>
+                                    <div style={{ marginTop: '8px', fontWeight: 'bold' }}>收費標準：</div>
+                                    <table style={{ width: '100%', marginTop: '6px', borderCollapse: 'collapse', background: '#fff', fontSize: '0.98em' }}>
                                       <thead>
                                         <tr>
-                                          <th style={{ textAlign: 'left', padding: '2px 6px' }}>時段</th>
-                                          <th style={{ textAlign: 'left', padding: '2px 6px' }}>尺寸</th>
-                                          <th style={{ textAlign: 'right', padding: '2px 6px' }}>單價</th>
-                                          <th style={{ textAlign: 'right', padding: '2px 6px' }}>規格</th>
-                                          <th style={{ textAlign: 'right', padding: '2px 6px' }}>單位(小時)</th>
+                                          <th style={{ textAlign: 'center', padding: '4px 6px' }}>租用時段</th>
+                                          <th style={{ textAlign: 'center', padding: '4px 6px' }}>尺寸</th>
+                                          <th style={{ textAlign: 'center', padding: '4px 6px' }}>單價 (元/小時)</th>
+                                          <th style={{ textAlign: 'center', padding: '4px 6px' }}>規格 (cm)</th>
                                         </tr>
                                       </thead>
                                       <tbody>
                                         {lockerDetail.price?.map((period, idx) =>
-                                          period.fee.map(fee => (
+                                          period.fee.map((fee, feeIdx) => (
                                             <tr key={fee.size + idx}>
-                                              <td style={{ padding: '2px 6px' }}>
-                                                {period.min_hour}~{period.max_hour}hr
+                                              <td style={{ textAlign: 'center', padding: '4px 6px' }}>
+                                                {feeIdx === 0
+                                                  ? `${period.min_hour}–${period.max_hour} 小時`
+                                                  : ''}
                                               </td>
-                                              <td style={{ padding: '2px 6px' }}>{fee.size}</td>
-                                              <td style={{ textAlign: 'right', padding: '2px 6px' }}>{fee.unit_fee}</td>
-                                              <td style={{ textAlign: 'right', padding: '2px 6px' }}>{fee.spec}</td>
-                                              <td style={{ textAlign: 'right', padding: '2px 6px' }}>{fee.unit_hour}</td>
+                                              <td style={{ textAlign: 'center', padding: '4px 6px' }}>{fee.size}</td>
+                                              <td style={{ textAlign: 'center', padding: '4px 6px' }}>{fee.unit_fee}</td>
+                                              <td style={{ textAlign: 'center', padding: '4px 6px' }}>{fee.spec}</td>
                                             </tr>
                                           ))
                                         )}
@@ -453,7 +453,7 @@ const LineLocker = () => {
                                       最長寄存天數：{lockerDetail.lonest_day}天，逾期天數：{lockerDetail.over_day}天
                                     </div>
                                   </div>
-                                ) : null}
+                                )}
                               </div>
                             )}
                           </li>
