@@ -1,0 +1,45 @@
+CREATE DATABASE trip_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE trip_db;
+
+-- 1. 使用者資料表 (來自 LINE)
+CREATE TABLE line_users (
+    line_user_id VARCHAR(50) PRIMARY KEY,
+    display_name VARCHAR(255),
+    picture_url TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. 行程主表
+CREATE TABLE line_trips (
+    trip_id INT AUTO_INCREMENT PRIMARY KEY,
+    line_user_id VARCHAR(50),
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    area VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (line_user_id) REFERENCES line_users(line_user_id)
+);
+
+-- 3. 行程細節表
+CREATE TABLE line_trip_details (
+    detail_id INT AUTO_INCREMENT PRIMARY KEY,
+    trip_id INT,
+    location VARCHAR(255) NOT NULL,
+    date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (trip_id) REFERENCES line_trips(trip_id) ON DELETE CASCADE
+);
+
+-- 4. 行程協作者表
+CREATE TABLE line_trip_collaborators (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    trip_id INT,
+    shared_user_id VARCHAR(50),
+    shared_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (trip_id) REFERENCES line_trips(trip_id) ON DELETE CASCADE,
+    UNIQUE KEY unique_collaborator (trip_id, shared_user_id)
+);
